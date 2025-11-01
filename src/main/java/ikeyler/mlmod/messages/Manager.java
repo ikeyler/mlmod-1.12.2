@@ -108,7 +108,7 @@ public class Manager {
             else messageCollector.addEntry(MessageType.PM_REPLY, player, matcher.group(1)+" -> "+msg);
 
             if (hideMessage) return;
-            if (Configuration.GENERAL.PM_NOTIFICATION.get() && mc.inGameHasFocus) {
+            if (Configuration.GENERAL.PM_NOTIFICATION.get() && !mc.inGameHasFocus) {
                 mc.world.playSound(mc.player, mc.player.getPosition(), new SoundEvent(new ResourceLocation("entity.experience_orb.pickup")), SoundCategory.MASTER, 0.5F, 0.7F);
             }
             return;
