@@ -107,6 +107,7 @@ public class EventListener {
                 }
                 Configuration.GENERAL.IGNORED_PLAYERS = players.toArray(new String[0]);
                 ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
+                messageManager.updateIgnoredPlayers();
                 break;
 
             case "/var":

@@ -1,5 +1,6 @@
 package ikeyler.mlmod.cfg;
 
+import ikeyler.mlmod.Main;
 import ikeyler.mlmod.Reference;
 import ikeyler.mlmod.messages.Messages;
 import net.minecraft.util.text.TextComponentTranslation;
@@ -110,6 +111,8 @@ public class Configuration {
         if (event.getModID().equals(Reference.MOD_ID)) {
             ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
             Messages.updateMessages();
+            Main.messageManager.updateIgnoredPlayers();
+            Main.logger.info("config updated");
         }
     }
 }

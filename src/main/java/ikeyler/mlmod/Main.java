@@ -22,6 +22,7 @@ public class Main
         MinecraftForge.EVENT_BUS.register(new EventListener());
         messageManager.addMessages(Messages.MESSAGES);
         messageManager.addMessages(Messages.AD_MESSAGES);
+        messageManager.updateIgnoredPlayers();
         Keybinds.register();
     }
 }
