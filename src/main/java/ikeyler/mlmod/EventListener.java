@@ -30,10 +30,15 @@ import static ikeyler.mlmod.util.TextUtil.MOD_PREFIX;
 public class EventListener {
     private final Minecraft mc = Minecraft.getMinecraft();
     private boolean messages_updated = false;
+    private final List<String> commands = new ArrayList<>(Arrays.asList("/edit", "/var", "/text", "/num", "/msgs"));
 
     @SubscribeEvent
     public void onChatReceivedEvent(ClientChatReceivedEvent event) {
-        if (!messages_updated) {Messages.updateMessages();messages_updated=true;}
+        if (!messages_updated) {
+            Messages.updateMessages();
+            messages_updated=true;
+            return;
+        }
         messageManager.processMessages(messageManager.getMessage(event.getMessage().getUnformattedText()), event);
     }
 
@@ -42,7 +47,7 @@ public class EventListener {
         String message = event.getMessage();
         String[] split = message.split(" ");
         String start = split.length > 0 ? split[0] : "";
-        List<String> commands = new ArrayList<>(Arrays.asList("/edit", "/var", "/text", "/num", "/msgs"));
+
         if (commands.contains(start.toLowerCase())) {
             event.setCanceled(true);
             mc.ingameGUI.getChatGUI().addToSentMessages(message);
