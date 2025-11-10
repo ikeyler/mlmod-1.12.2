@@ -3,9 +3,11 @@ package ikeyler.mlmod;
 import ikeyler.mlmod.cfg.Configuration;
 import ikeyler.mlmod.messages.MessageType;
 import ikeyler.mlmod.messages.Messages;
+import ikeyler.mlmod.util.ItemUtil;
 import ikeyler.mlmod.util.SoundUtil;
 import ikeyler.mlmod.util.TextUtil;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.JsonToNBT;
@@ -32,7 +34,7 @@ public class EventListener {
     private final Minecraft mc = Minecraft.getMinecraft();
     private boolean messages_updated = false;
     private final List<String> commands = new ArrayList<>(
-            Arrays.asList("/edit", "/var", "/text", "/num", "/msgs", "/ignorelist"));
+            Arrays.asList("/edit", "/var", "/text", "/num", "/msgs", "/ignorelist", "/head"));
 
     @SubscribeEvent
     public void onChatReceivedEvent(ClientChatReceivedEvent event) {
@@ -90,7 +92,7 @@ public class EventListener {
                     String player = spl[0];
                     String msg = spl.length > 1 ? spl[1] : "";
                     String chat = spl.length > 2 ? spl[2] : "/m " + player + " ";
-                    TextComponentTranslation menu = new TextComponentTranslation("mlmod.messages.chat_player_interact", player);
+                    TextComponentTranslation menu = new TextComponentTranslation("mlmod.messages.chat_player_interact", "§7§o"+player);
                     Style write = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, chat));
                     Style copy = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodcopytext "+msg)).setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentString(msg)));
                     Style report = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/report " + player));
@@ -157,8 +159,8 @@ public class EventListener {
                 }
                 if (item != null) {
                     item.setStackDisplayName(TextUtil.replaceColorCodes(name));
-                    // не апдейтает инвентарь
                     mc.player.addItemStackToInventory(item);
+                    mc.displayGuiScreen(new GuiInventory(mc.player));
                 }
                 break;
 
@@ -255,6 +257,23 @@ public class EventListener {
                     switchColor = !switchColor;
                 }
                 mc.player.sendMessage(soundComponent);
+                break;
+
+            case "/head":
+                if (split.length==1) {
+                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation("mlmod.messages.head.usage")));
+                    return;
+                }
+                if (!mc.player.isCreative()) {
+                    mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.creative_mode_needed"));
+                    return;
+                }
+                try {
+                    String headName = split[1].toLowerCase();
+                    mc.player.addItemStackToInventory(ItemUtil.getPlayerHead(headName));
+                    //mc.displayGuiScreen(new GuiInventory(mc.player));
+                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation("mlmod.messages.head.head_given", "§7"+headName)));
+                } catch (Exception e) {mc.player.sendMessage(new TextComponentTranslation("mlmod.command_error")); logger.error(e);}
                 break;
 
             case "/mlmodtogglemsgcollector":

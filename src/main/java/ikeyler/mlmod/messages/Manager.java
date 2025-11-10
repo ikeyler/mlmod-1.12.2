@@ -28,6 +28,7 @@ public class Manager {
     private final Minecraft mc = Minecraft.getMinecraft();
     private final Pattern adPattern = Pattern.compile("/?\\b(ad|ад|id|айди|join)\\s+(\\S+)");
     private String you = "you";
+    private final String translatePrefix = "[Перевести]";
     private List<String> ignoredPlayers = new ArrayList<>();
     private final List<Message> ccDisabledMessages = Arrays.asList(
             Messages.CC_DISABLED, Messages.CC_DISABLED2, Messages.CC_DISABLED3,
@@ -97,12 +98,20 @@ public class Manager {
             messageCollector.addEntry(type, player, msg);
             if (hideMessage) return;
 
+            List<ITextComponent> siblingList = messageComponent.getSiblings();
+            if (Configuration.GENERAL.HIDE_TRANSLATE.get() && siblingList.get(siblingList.size()-1).getUnformattedText().equalsIgnoreCase(translatePrefix)) {
+                messageComponent = new TextComponentString("");
+                siblingList.subList(0, siblingList.size()-1).forEach(messageComponent::appendSibling);
+                setMessage = true;
+            }
+
             if (isChatFormattingEnabled() && messageComponent.getSiblings().size() > 2) {
                 String formatting = message == Messages.CREATIVE_CHAT ? Configuration.CHAT_FORMATTING.CREATIVE_CHAT : Configuration.CHAT_FORMATTING.DONATE_CHAT;
                 if (formatting != null && !formatting.isEmpty()) {
                     ITextComponent formattedComponent = new TextComponentString("");
                     formattedComponent.appendText(TextUtil.replaceWithColorCodes(formatting) + " ");
-                    messageComponent.getSiblings().subList(2, messageComponent.getSiblings().size())
+                    List<ITextComponent> componentList = messageComponent.getSiblings();
+                    componentList.subList(2, componentList.size())
                             .forEach(formattedComponent::appendSibling);
                     setMessage = true;
                     messageComponent = formattedComponent;
@@ -162,8 +171,7 @@ public class Manager {
     }
 
     private String trimMessage(String msg) {
-        String translatePrefix = "[Перевести]";
-        return StringUtils.removeEnd(msg, translatePrefix).trim();
+        return StringUtils.removeEnd(msg, " "+translatePrefix).trim();
     }
     private boolean isPlayerIgnored(String player) {
         return ignoredPlayers.contains(player.toLowerCase()) &&

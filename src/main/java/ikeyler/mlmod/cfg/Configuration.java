@@ -48,6 +48,10 @@ public class Configuration {
         @Config.LangKey("mlmod.config.option.message_collector")
         @Config.Comment("mlmod.config.option.message_collector.tooltip")
         public Bool MESSAGE_COLLECTOR = Bool.FALSE;
+
+        @Config.LangKey("mlmod.config.option.hide_translate")
+        @Config.Comment("mlmod.config.option.hide_translate.tooltip")
+        public Bool HIDE_TRANSLATE = Bool.FALSE;
     }
 
     public static class GeneralMessages {
