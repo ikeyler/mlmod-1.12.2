@@ -22,7 +22,7 @@ public class PacketHandler {
         ChannelPipeline pipeline = manager.channel().pipeline();
         pipeline.addBefore("packet_handler", "packet_interceptor", new ChannelInboundHandlerAdapter() {
             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                if (msg instanceof SPacketTimeUpdate && ModUtils.IN_DEV_MODE) {
+                if (msg instanceof SPacketTimeUpdate && ModUtils.NIGHT_DEV_MODE) {
                     mc.world.setWorldTime(18000L);
                     return;
                 }

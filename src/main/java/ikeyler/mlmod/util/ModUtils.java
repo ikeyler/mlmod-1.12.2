@@ -4,25 +4,29 @@ import ikeyler.mlmod.cfg.Configuration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.TextComponentTranslation;
 
+import java.time.LocalDateTime;
+
 public class ModUtils {
     private static final Minecraft mc = Minecraft.getMinecraft();
     public static final String MOD_PREFIX = "§8» §f";
     public static final String NOTIFICATION_SOUND = "entity.experience_orb.pickup";
-    public static boolean IN_DEV_MODE = false;
-    public static final float GAME_GAMMA_SETTING = Minecraft.getMinecraft().gameSettings.gammaSetting;
+    public static boolean NIGHT_DEV_MODE = false;
+    public static final float GAME_GAMMA_SETTING = mc.gameSettings.gammaSetting;
+    public static LocalDateTime LATEST_WORLD_JOIN = LocalDateTime.now();
 
-    public static void enableDevMode() {
+    public static void enableNightDevMode() {
         if (Configuration.CREATIVE.DEV_NIGHT_MODE.get() && mc.player.isCreative()) {
-            IN_DEV_MODE = true;
+            NIGHT_DEV_MODE = true;
             mc.gameSettings.gammaSetting = 1000.0F;
         }
     }
-    public static void disableDevMode() {
-        if (IN_DEV_MODE && Configuration.CREATIVE.DEV_NIGHT_MODE.get()) {
+    public static void disableNightDevMode() {
+        if (NIGHT_DEV_MODE && Configuration.CREATIVE.DEV_NIGHT_MODE.get()) {
             mc.gameSettings.gammaSetting = GAME_GAMMA_SETTING;
         }
-        IN_DEV_MODE = false;
+        NIGHT_DEV_MODE = false;
     }
+
     public static void nightModeCommand() {
         if (!mc.player.isCreative()) {
             mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.creative_mode_needed"));
@@ -32,7 +36,22 @@ public class ModUtils {
             mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.nightmode.enable_in_config"));
             return;
         }
-        enableDevMode();
+        enableNightDevMode();
         mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.nightmode.enabled"));
+    }
+    public static void sendSuccess() {
+        mc.player.sendMessage(new TextComponentTranslation("mlmod.success"));
+    }
+    public static void sendBarSuccess() {
+        mc.ingameGUI.setOverlayMessage(new TextComponentTranslation("mlmod.success"), false);
+    }
+    public static void sendIncorrectArguments() {
+        mc.player.sendMessage(new TextComponentTranslation("mlmod.incorrect_arguments"));
+    }
+    public static void sendCommandError() {
+        mc.player.sendMessage(new TextComponentTranslation("mlmod.command_error"));
+    }
+    public static void sendCreativeModeNeeded() {
+        mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.creative_mode_needed"));
     }
 }

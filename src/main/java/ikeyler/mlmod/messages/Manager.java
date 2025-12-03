@@ -75,7 +75,7 @@ public class Manager {
 
         if (message == Messages.DEV_MODE_JOIN) {
             if (!Configuration.CREATIVE.DEV_MODE_JOIN.get()) event.setCanceled(true);
-            ModUtils.enableDevMode();
+            ModUtils.enableNightDevMode();
             return;
         }
 
@@ -116,7 +116,7 @@ public class Manager {
                 String formatting = message == Messages.CREATIVE_CHAT ? Configuration.CHAT_FORMATTING.CREATIVE_CHAT : Configuration.CHAT_FORMATTING.DONATE_CHAT;
                 if (formatting != null && !formatting.isEmpty()) {
                     ITextComponent formattedComponent = new TextComponentString("");
-                    formattedComponent.appendText(TextUtil.replaceWithColorCodes(formatting) + " ");
+                    formattedComponent.appendText(TextUtil.replaceColorCodes(formatting) + " ");
                     List<ITextComponent> componentList = messageComponent.getSiblings();
                     componentList.subList(2, componentList.size())
                             .forEach(formattedComponent::appendSibling);

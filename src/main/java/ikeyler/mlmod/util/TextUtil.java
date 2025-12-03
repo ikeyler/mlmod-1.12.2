@@ -20,10 +20,10 @@ public class TextUtil {
     public static String removeColors(String s) {
         return colors.stream().reduce(s, (str, color) -> str.replace(color, ""));
     }
+//    public static String replaceColorCodes(String s) {
+//        return colors.stream().reduce(s, (str, color) -> str.replace(color.replace("&", "§"), color));
+//    }
     public static String replaceColorCodes(String s) {
-        return colors.stream().reduce(s, (str, color) -> str.replace(color.replace("§", "&"), color));
-    }
-    public static String replaceWithColorCodes(String s) {
         return colors.stream().reduce(s, (str, color) -> str.replace(color.replace("§", "&"), color));
     }
 
@@ -31,11 +31,22 @@ public class TextUtil {
         return new Style()
                 .setHoverEvent(new HoverEvent(
                         HoverEvent.Action.SHOW_TEXT,
-                        new TextComponentTranslation("mlmod.messages.edit.lmb_to_view_text")
+                        new TextComponentTranslation("mlmod.messages.lmb_to_view_text")
                 ))
                 .setClickEvent(new ClickEvent(
                         ClickEvent.Action.SUGGEST_COMMAND,
                         clickText
+                ));
+    }
+    public static Style clickToCopyStyle(String copyText) {
+        return new Style()
+                .setHoverEvent(new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new TextComponentTranslation("mlmod.messages.lmb_to_copy_text")
+                ))
+                .setClickEvent(new ClickEvent(
+                        ClickEvent.Action.RUN_COMMAND,
+                        "/mlmodcopytext "+copyText
                 ));
     }
     public static Style newStyle() {

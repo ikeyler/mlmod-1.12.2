@@ -52,8 +52,7 @@ mlmod.config.option.sound_command.tooltip=§fПозволяет искать и 
 mlmod.config.option.hide_translate=Скрывать §3[Перевести] §7в §3CC §7и §2DC
 mlmod.config.option.hide_translate.tooltip=§fСкрывает §3[Перевести] §7в §3CC §7и §2DC
 mlmod.config.option.dev_night_mode=§aНочной режим в /dev
-mlmod.messages.edit.lmb_to_view_text=§aЛКМ§7, чтобы вывести текст в чат
-mlmod.messages.edit.old_name=Старое название: §7[%s§7]
+mlmod.messages.lmb_to_view_text=§aЛКМ§7, чтобы вывести текст в чат
 mlmod.messages.creative_mode_needed=§cВы должны быть в режиме креатива для этого
 mlmod.messages.open_component=§a[Открыть]
 mlmod.messages.chat_player_interact=Игрок: %s
@@ -63,6 +62,7 @@ mlmod.messages.block=§4[Заблокировать]
 mlmod.messages.report=§c[Пожаловаться]
 mlmod.messages.copy_message=§2[Скопировать сообщение]
 mlmod.messages.find_messages=§3[Найти сообщения]
+mlmod.messages.find_who=§6[/who]
 mlmod.messages.ignore.player_added=Игрок §7%s §aдобавлен§f в список заблокированных игроков в MLMod
 mlmod.messages.ignore.player_removed=Игрок §7%s §cубран§f из списка заблокированных игроков в MLMod
 mlmod.mineland=§cMi§ene§bla§and
@@ -74,11 +74,6 @@ mlmod.incorrect_arguments=§cНекорректные аргументы ком�
 mlmod.command_error=§cПроизошла ошибка при выполнении команды
 mlmod.messages.ignore.add_on_mineland=Добавить также на %s?
 mlmod.messages.ignore.remove_on_mineland=Убрать также на %s?
-mlmod.messages.itemeditor.item_name=Предмет: %s
-mlmod.messages.itemeditor.item_lore=Описание:
-mlmod.messages.itemeditor.rename=Переименовать
-mlmod.messages.itemeditor.edit_lore=Изменить описание
-mlmod.messages.itemeditor.enchant=Зачаровать
 mlmod.messages.collector.total=Всего записано §7%s сообщений
 mlmod.messages.collector.info=Сообщения находятся в файле '§6.minecraft\mlmodData.txt§f'. §aНажмите, чтобы открыть
 mlmod.messages.collector.search_guide=§fИспользуйте §7/msgs find §3<текст (опционально)> <dc/cc/pc/ls/reply> §fдля поиска последних §350 сообщений §fпо содержимому или нику
@@ -104,3 +99,44 @@ mlmod.messages.head.usage=Используйте §7/head §3<никнейм> §
 mlmod.messages.head.head_given=Выдана голова игрока %s §8(откройте инвентарь для обновления)
 mlmod.messages.nightmode.enabled=Ночной режим /dev §aвключен
 mlmod.messages.nightmode.enable_in_config=§cВключите настройку "Ночной режим в /dev" для активации ночного режима
+mlmod.messages.itemeditor.editing=Редактирование: %s
+mlmod.messages.itemeditor.no_lore=§7§o(без описания)
+mlmod.messages.itemeditor.no_ench=§7§o(без зачарований)
+mlmod.messages.itemeditor.button_add=§a+
+mlmod.messages.itemeditor.button_remove=§c-
+mlmod.messages.itemeditor.button_edit=§e✎
+mlmod.messages.itemeditor.button_info=§3(?)
+mlmod.messages.itemeditor.rename=§7Переименовать предмет
+mlmod.messages.itemeditor.addlore=§7Добавить описание
+mlmod.messages.itemeditor.editlore=§7Редактировать описание (§8/item editlore §3<номер строки> <описание>§7)
+mlmod.messages.itemeditor.removelore=§7Убрать описание (§8/item removelore §3<номер строки (необязательно)>§7)
+mlmod.messages.itemeditor.addenchant=§7Зачаровать (§8/item enchant §3<зачарование> <уровень>§7)
+mlmod.messages.itemeditor.unenchant=§7Убрать зачарование (§8/item unenchant §3<зачарование (необязательно)>§7)
+mlmod.messages.itemeditor.enchant_info=§7Используйте §8/item enchlist §7для просмотра всех зачарований
+mlmod.messages.itemeditor.click_to_enchant=§aЛКМ§7, чтобы зачаровать
+mlmod.messages.itemeditor.no_ench_on_item=§cНа предмете нет такого зачарования
+mlmod.messages.itemeditor.view_nbt=§3[Просмотреть NBT]
+mlmod.messages.itemeditor.breakable=§b[Разрушаемый]
+mlmod.messages.itemeditor.unbreakable=§b[Неразрушаемый]
+mlmod.messages.itemeditor.editdurability=§2[Прочность]
+mlmod.messages.itemeditor.empty_hand=§cВ вашей руке должен находиться предмет
+mlmod.messages.itemeditor.old_name=Старое название: §7[%s§7]
+mlmod.messages.lmb_to_copy_text=§aЛКМ§7, чтобы скопировать текст
+mlmod.messages.vars.var_list=Сохраненные переменные §7(%s§7)
+mlmod.messages.vars.info=§7Добавьте переменную командой §8/varsave§7, держа ее в руках, или используя бинд в настройках
+mlmod.messages.vars.click_to_get=§aЛКМ§7, чтобы выдать переменную
+mlmod.messages.vars.click_to_remove=§aЛКМ§7, чтобы удалить переменную
+mlmod.messages.vars.var_saved=§aПеременная успешно сохранена §7(тип: %s§7)
+mlmod.messages.vars.var_not_saved=§cНе удалось сохранить переменную из руки. Возможно, данный тип не поддерживается
+mlmod.messages.vars.var_removed=§aПеременная %s §aуспешно удалена
+mlmod.messages.vars.var_not_removed=§cНе удалось удалить переменную
+mlmod.var_saved=§dСОХРАНЕНО
+mlmod.var.text=§bТекст
+mlmod.var.number=§cЧисло
+mlmod.var.location=§aЛокация
+mlmod.var.var_saved=§dПеременная
+mlmod.var.var_unsaved=§cПеременная
+mlmod.var.array_const=§bМассив
+mlmod.var.array_temp=§dМассив
+mlmod.var.component=§9Компонент
+mlmod.var.vector=§3Вектор

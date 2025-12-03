@@ -28,10 +28,10 @@ public class MessageCollector {
 
     public MessageCollector() {
         try {
-            if (dataFile.createNewFile()) Main.logger.info("created data file: {}", dataFile.getName());
+            if (dataFile.createNewFile()) Main.logger.info("created msgcollector data file: {}", dataFile.getName());
         }
         catch (IOException e) {
-            Main.logger.error("could not create data file:", e);
+            Main.logger.error("could not create msgcollector data file:", e);
         }
     }
     public void addEntry(MessageType type, String player, String data) {

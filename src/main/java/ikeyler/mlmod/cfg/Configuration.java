@@ -142,7 +142,7 @@ public class Configuration {
             ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
             Messages.updateMessages();
             Main.messageManager.updateIgnoredPlayers();
-            if (!CREATIVE.DEV_NIGHT_MODE.get()) ModUtils.disableDevMode();
+            if (!CREATIVE.DEV_NIGHT_MODE.get()) ModUtils.disableNightDevMode();
             Main.logger.info("config updated");
         }
     }
