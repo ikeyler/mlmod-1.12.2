@@ -56,12 +56,13 @@ public class ChatListener {
         String[] split = message.split(" ");
         String start = split.length > 0 ? split[0] : "";
 
-        if (message.startsWith("!") && Configuration.CREATIVE.EXCL_MARK_TO_CC.get()) {
+        if (message.startsWith("!") && Configuration.GENERAL.EXCL_MARK_TO_CHAT != Configuration.CHAT_MODE.OFF) {
             String newMessage = message.replaceFirst("!", "").trim();
             if (newMessage.isEmpty()) return;
             event.setCanceled(true);
             mc.ingameGUI.getChatGUI().addToSentMessages(message);
-            mc.player.sendChatMessage("/cc "+newMessage);
+            String chatType = Configuration.GENERAL.EXCL_MARK_TO_CHAT == Configuration.CHAT_MODE.CC ? "/cc" : "/dc";
+            mc.player.sendChatMessage(chatType+" "+newMessage);
             return;
         }
 
@@ -70,7 +71,6 @@ public class ChatListener {
             mc.ingameGUI.getChatGUI().addToSentMessages(message);
         }
 
-        // y
         switch (start.toLowerCase()) {
             case "/mlmodplayerinteract":
                 event.setCanceled(true);

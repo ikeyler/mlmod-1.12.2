@@ -33,26 +33,24 @@ public class Configuration {
         @Config.LangKey("mlmod.config.option.ignored_players")
         @Config.Comment("mlmod.config.option.ignored_players.tooltip")
         public String[] IGNORED_PLAYERS = {};
-
         @Config.LangKey("mlmod.config.option.ads")
         @Config.Comment("mlmod.config.option.ads.tooltip")
         public Bool ADS = Bool.TRUE;
-
         @Config.LangKey("mlmod.config.option.chat_player_interact")
         @Config.Comment("mlmod.config.option.chat_player_interact.tooltip")
         public Bool CHAT_PLAYER_INTERACT = Bool.FALSE;
-
         @Config.LangKey("mlmod.config.option.pm_notification")
         @Config.Comment("mlmod.config.option.pm_notification.tooltip")
         public Bool PM_NOTIFICATION = Bool.FALSE;
-
         @Config.LangKey("mlmod.config.option.message_collector")
         @Config.Comment("mlmod.config.option.message_collector.tooltip")
         public Bool MESSAGE_COLLECTOR = Bool.FALSE;
-
         @Config.LangKey("mlmod.config.option.hide_translate")
         @Config.Comment("mlmod.config.option.hide_translate.tooltip")
         public Bool HIDE_TRANSLATE = Bool.FALSE;
+        @Config.LangKey("mlmod.config.option.excl_mark_to_chat")
+        @Config.Comment("mlmod.config.option.excl_mark_to_chat.tooltip")
+        public CHAT_MODE EXCL_MARK_TO_CHAT = CHAT_MODE.OFF;
     }
 
     public static class GeneralMessages {
@@ -91,15 +89,12 @@ public class Configuration {
         @Config.LangKey("mlmod.config.option.show_world_id")
         @Config.Comment("mlmod.config.option.show_world_id.tooltip")
         public Bool SHOW_WORLD_ID = Bool.FALSE;
-        @Config.LangKey("mlmod.config.option.excl_mark_to_cc")
-        @Config.Comment("mlmod.config.option.excl_mark_to_cc.tooltip")
-        public Bool EXCL_MARK_TO_CC = Bool.FALSE;
         @Config.LangKey("mlmod.config.option.play_sound")
         @Config.Comment("mlmod.config.option.play_sound.tooltip")
         public Bool PLAY_SOUND = Bool.FALSE;
         @Config.LangKey("mlmod.config.option.sound_command")
         @Config.Comment("mlmod.config.option.sound_command.tooltip")
-        public Bool SOUND_COMMAND = Bool.FALSE;
+        public Bool SOUND_COMMAND = Bool.TRUE;
         @Config.LangKey("mlmod.config.option.dev_night_mode")
         public Bool DEV_NIGHT_MODE = Bool.FALSE;
     }
@@ -133,6 +128,20 @@ public class Configuration {
         }
         public static Bool fromBoolean(boolean value) {
             return value ? TRUE : FALSE;
+        }
+    }
+
+    public enum CHAT_MODE {
+        DC("mlmod.config.option.excl_mark_to_chat.dc"),
+        CC("mlmod.config.option.excl_mark_to_chat.cc"),
+        OFF("mlmod.config.option.excl_mark_to_chat.off");
+        private final String translation;
+        CHAT_MODE(String translation) {
+            this.translation = translation;
+        }
+        @Override
+        public String toString() {
+            return new TextComponentTranslation(this.translation).getUnformattedText();
         }
     }
 
