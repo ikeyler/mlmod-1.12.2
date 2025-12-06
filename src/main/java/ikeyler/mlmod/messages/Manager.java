@@ -1,18 +1,17 @@
 package ikeyler.mlmod.messages;
 
-import ikeyler.mlmod.cfg.Configuration;
+import ikeyler.mlmod.cfg.Config;
+import ikeyler.mlmod.Main;
 import ikeyler.mlmod.util.ModUtils;
 import ikeyler.mlmod.util.SoundUtil;
 import ikeyler.mlmod.util.TextUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,11 +21,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ikeyler.mlmod.Main.messageCollector;
-import static ikeyler.mlmod.Main.logger;
 
 public class Manager {
     private final List<Message> messageList = new ArrayList<>();
-    private final Minecraft mc = Minecraft.getMinecraft();
+    private final Minecraft mc = Minecraft.getInstance();
     private final Pattern adPattern = Pattern.compile("/?\\b(ad|ад|id|айди|join)\\s+(\\S+)");
     private String you = "you";
     private final String translatePrefix = "[Перевести]";
@@ -36,58 +34,57 @@ public class Manager {
             Messages.CC_DISABLED4, Messages.CC_DISABLED5
     );
     private boolean init;
-
+    public void updateIgnoredPlayers() {
+        ignoredPlayers = Config.IGNORED_PLAYERS.get().stream().map(String::toLowerCase).collect(Collectors.toList());
+    }
     public void addMessages(List<Message> messages) {
         messageList.addAll(messages);
     }
-    public void updateIgnoredPlayers() {
-        ignoredPlayers = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
-    }
     public Message getMessage(String message) {
-        if (Messages.CREATIVE_CHAT.matches(message)) return Messages.CREATIVE_CHAT;
-        if (Messages.DONATE_CHAT.matches(message)) return Messages.DONATE_CHAT;
-
         return messageList.stream()
                 .filter(msg -> msg.matches(message)).findFirst().orElse(null);
     }
-
     public void processMessages(Message message, ClientChatReceivedEvent event) {
         if (!init && (init=true)) {
-            you = new TextComponentTranslation("mlmod.you").getUnformattedText();
+            you = new TranslationTextComponent("mlmod.you").getString();
             updateIgnoredPlayers();
         }
         if (message == null) return;
-        if (!message.isActive() || (!Configuration.GENERAL.ADS.get() && Messages.AD_MESSAGES.contains(message))) {
+        if (!message.isActive()) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!Config.ADS.get() && Messages.AD_MESSAGES.contains(message)) {
             event.setCanceled(true);
             return;
         }
         if (ccDisabledMessages.contains(message)) {
             if (message == Messages.CC_DISABLED5) {
-                event.setMessage(new TextComponentTranslation("mlmod.messages.use_excl_mark_to_cc"));
+                event.setMessage(new TranslationTextComponent("mlmod.messages.use_excl_mark_to_cc"));
                 return;
             }
             event.setCanceled(true);
             return;
         }
 
-        ITextComponent messageComponent = event.getMessage();
+        StringTextComponent messageComponent = (StringTextComponent) event.getMessage();
         Matcher matcher = message.getMatcher();
 
         if (message == Messages.DEV_MODE_JOIN) {
-            if (!Configuration.CREATIVE.DEV_MODE_JOIN.get()) event.setCanceled(true);
+            if (!Config.DEV_MODE_JOIN.get()) event.setCanceled(true);
             ModUtils.enableNightDevMode();
             return;
         }
 
         if (message == Messages.UNANSWERED_ASKS || message == Messages.UNREAD_MAIL) {
             String cmd = message == Messages.UNANSWERED_ASKS ? "/q" : "/mailgui";
-            TextComponentTranslation component = new TextComponentTranslation("mlmod.messages.open_component");
-            component.setStyle(component.getStyle()
-                    .setClickEvent(new ClickEvent(
+            TranslationTextComponent component = new TranslationTextComponent("mlmod.messages.open_component");
+            component.withStyle(component.getStyle()
+                    .withClickEvent(new ClickEvent(
                             ClickEvent.Action.RUN_COMMAND,
                             cmd
                     )));
-            event.setMessage(messageComponent.createCopy().appendText(" ").appendSibling(component));
+            event.setMessage(messageComponent.copy().append(" ").append(component));
             return;
         }
 
@@ -106,47 +103,44 @@ public class Manager {
             if (hideMessage) return;
 
             List<ITextComponent> siblingList = messageComponent.getSiblings();
-            if (Configuration.GENERAL.HIDE_TRANSLATE.get() && siblingList.get(siblingList.size()-1).getUnformattedText().equalsIgnoreCase(translatePrefix)) {
-                messageComponent = new TextComponentString("");
-                siblingList.subList(0, siblingList.size()-1).forEach(messageComponent::appendSibling);
+            if (Config.HIDE_TRANSLATE.get() && siblingList.get(siblingList.size()-1).getString().equalsIgnoreCase(translatePrefix)) {
+                messageComponent = new StringTextComponent("");
+                siblingList.subList(0, siblingList.size()-1).forEach(messageComponent::append);
                 setMessage = true;
             }
 
             if (isChatFormattingEnabled() && messageComponent.getSiblings().size() > 2) {
-                String formatting = message == Messages.CREATIVE_CHAT ? Configuration.CHAT_FORMATTING.CREATIVE_CHAT : Configuration.CHAT_FORMATTING.DONATE_CHAT;
+                String formatting = message == Messages.CREATIVE_CHAT ? Config.FORMATTING_CC.get() : Config.FORMATTING_DC.get();
                 if (formatting != null && !formatting.isEmpty()) {
-                    ITextComponent formattedComponent = new TextComponentString("");
-                    formattedComponent.appendText(TextUtil.replaceColorCodes(formatting) + " ");
+                    StringTextComponent formattedComponent = new StringTextComponent("");
+                    formattedComponent.append(TextUtil.replaceColorCodes(formatting) + " ");
                     List<ITextComponent> componentList = messageComponent.getSiblings();
                     componentList.subList(2, componentList.size())
-                            .forEach(formattedComponent::appendSibling);
+                            .forEach(formattedComponent::append);
                     setMessage = true;
                     messageComponent = formattedComponent;
                 }
             }
 
-            if (Configuration.GENERAL.CHAT_PLAYER_INTERACT.get()) {
-                ITextComponent component = messageComponent.createCopy();
+            if (Config.CHAT_PLAYER_INTERACT.get()) {
                 Style style = messageComponent.getStyle()
-                        .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.chat_player_interact.click", player)))
-                        .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodplayerinteract " + player + ":::" + msg + ":::" + reply));
-                component.setStyle(style);
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent("mlmod.messages.chat_player_interact.click", player)))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodplayerinteract " + player + ":::" + msg + ":::" + reply));
+                messageComponent.setStyle(style);
                 Matcher adMatcher = adPattern.matcher(msg.toLowerCase());
                 List<String> adList = new ArrayList<>();
                 while (adMatcher.find()) {String[] spl = adMatcher.group(0).split(" "); adList.add("/ad "+spl[spl.length-1].replace(",", ""));}
                 if (!adList.isEmpty()) {
                     Style adStyle = TextUtil.newStyle().
-                            setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodshowmessageads " + String.join(",", adList))).
-                            setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.show_world_ads")));
-                    TextComponentString adComponent = new TextComponentString(" ⬈");
+                            withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodshowmessageads " + String.join(",", adList))).
+                            withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent("mlmod.messages.show_world_ads")));
+                    StringTextComponent adComponent = new StringTextComponent(" ⬈");
                     adComponent.setStyle(adStyle);
-                    component.appendSibling(adComponent);
+                    messageComponent.append(adComponent);
                 }
                 setMessage = true;
-                messageComponent = component;
             }
             if (setMessage) event.setMessage(messageComponent);
-            return;
         }
 
         if (message == Messages.PM || message == Messages.PM_REPLY) {
@@ -161,7 +155,7 @@ public class Manager {
             messageCollector.addEntry(type, player, data);
 
             if (hideMessage) return;
-            if (Configuration.GENERAL.PM_NOTIFICATION.get() && !mc.inGameHasFocus) {
+            if (Config.PM_NOTIFICATION.get() && GLFW.glfwGetWindowAttrib(mc.getWindow().getWindow(), GLFW.GLFW_FOCUSED) == 0) {
                 SoundUtil.playSound(ModUtils.NOTIFICATION_SOUND, 0.5F, 0.7F);
             }
             return;
@@ -175,16 +169,17 @@ public class Manager {
             return;
         }
 
-        if (message == Messages.WORLD_INVITE && Configuration.CREATIVE.SHOW_WORLD_ID.get()) {
+        if (message == Messages.WORLD_INVITE && Config.SHOW_WORLD_ID.get()) {
             try {
                 String[] split = messageComponent.getSiblings().get(0).getStyle().getClickEvent().getValue().split(" ");
                 String worldID = split[split.length-1];
-                event.setMessage(messageComponent.createCopy().appendText("§8(ID: "+worldID+")"));
-            } catch (Exception e) {
-                logger.error("error while reformatting world invite:", e);}
+                event.setMessage(messageComponent.copy().append("§8(ID: "+worldID+")"));
+            }
+            catch (Exception e) {
+                Main.logger.error("error while reformatting world invite:", e);
+            }
         }
     }
-
     private String trimMessage(String msg) {
         return StringUtils.removeEnd(msg, " "+translatePrefix).trim();
     }
@@ -193,7 +188,7 @@ public class Manager {
                 !player.equalsIgnoreCase(you);
     }
     private boolean isChatFormattingEnabled() {
-        return Configuration.CHAT_FORMATTING.CHAT_FORMATTING.get() &&
-                (!Configuration.CHAT_FORMATTING.CREATIVE_CHAT.isEmpty() || !Configuration.CHAT_FORMATTING.DONATE_CHAT.isEmpty());
+        return Config.CHAT_FORMATTING.get() &&
+                (!Config.FORMATTING_CC.get().isEmpty() || !Config.FORMATTING_DC.get().isEmpty());
     }
 }

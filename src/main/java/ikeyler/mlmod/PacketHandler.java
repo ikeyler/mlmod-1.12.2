@@ -6,24 +6,24 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketTimeUpdate;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.network.FMLNetworkEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.network.play.server.SUpdateTimePacket;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class PacketHandler {
-    private final Minecraft mc = Minecraft.getMinecraft();
+    private final Minecraft mc = Minecraft.getInstance();
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
-    public void onClientConnected(FMLNetworkEvent.ClientConnectedToServerEvent event) {
-        NetworkManager manager = event.getManager();
+    @OnlyIn(Dist.CLIENT)
+    public void onClientConnected(ClientPlayerNetworkEvent.LoggedInEvent event) {
+        NetworkManager manager = event.getNetworkManager();
         ChannelPipeline pipeline = manager.channel().pipeline();
         pipeline.addBefore("packet_handler", "packet_interceptor", new ChannelInboundHandlerAdapter() {
             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                if (msg instanceof SPacketTimeUpdate && ModUtils.NIGHT_DEV_MODE) {
-                    mc.world.setWorldTime(18000L);
+                if (msg instanceof SUpdateTimePacket && ModUtils.NIGHT_DEV_MODE) {
+                    mc.level.setDayTime(18000L);
                     return;
                 }
                 super.channelRead(ctx, msg);

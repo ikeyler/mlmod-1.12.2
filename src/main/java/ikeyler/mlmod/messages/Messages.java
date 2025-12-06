@@ -1,6 +1,6 @@
 package ikeyler.mlmod.messages;
 
-import ikeyler.mlmod.cfg.Configuration;
+import ikeyler.mlmod.cfg.Config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -181,16 +181,15 @@ public class Messages {
     );
 
     public static void updateMessages() {
-        REWARD_STORAGE.setActive(Configuration.GENERAL_MESSAGES.REWARD_STORAGE.get());
-        WELCOME_TO_MINELAND.setActive(Configuration.GENERAL_MESSAGES.WELCOME_TO_MINELAND.get());
-        UNREAD_MAIL.setActive(Configuration.GENERAL_MESSAGES.UNREAD_MAIL.get());
-        UNANSWERED_ASKS.setActive(Configuration.GENERAL_MESSAGES.UNANSWERED_ASKS.get());
-        WORLD_INVITE.setActive(Configuration.CREATIVE.WORLD_INVITE.get());
-        NEW_VIDEO.setActive(Configuration.GENERAL_MESSAGES.NEW_VIDEO.get());
-        PUNISHMENT_BROADCAST.setActive(Configuration.GENERAL_MESSAGES.PUNISHMENT_BROADCAST.get());
-        DONATION.setActive(Configuration.GENERAL_MESSAGES.DONATION.get());
-        PLAYER_VOTED.setActive(Configuration.GENERAL_MESSAGES.PLAYER_VOTED.get());
-        STREAM.setActive(Configuration.GENERAL_MESSAGES.STREAM.get());
-        NEW_ASK.setActive(Configuration.GENERAL_MESSAGES.NEW_ASK.get());
-    }
-}
+        REWARD_STORAGE.setActive(Config.REWARD_STORAGE.get());
+        WELCOME_TO_MINELAND.setActive(Config.WELCOME_TO_MINELAND.get());
+        UNREAD_MAIL.setActive(Config.UNREAD_MAIL.get());
+        UNANSWERED_ASKS.setActive(Config.UNANSWERED_ASKS.get());
+        WORLD_INVITE.setActive(Config.WORLD_INVITE.get());
+        NEW_VIDEO.setActive(Config.NEW_VIDEO.get());
+        PUNISHMENT_BROADCAST.setActive(Config.PUNISHMENT_BROADCAST.get());
+        DONATION.setActive(Config.DONATION.get());
+        PLAYER_VOTED.setActive(Config.PLAYER_VOTED.get());
+        STREAM.setActive(Config.STREAM.get());
+        NEW_ASK.setActive(Config.NEW_ASK.get());
+    }}

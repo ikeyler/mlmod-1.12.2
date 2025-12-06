@@ -1,11 +1,14 @@
 package ikeyler.mlmod.itemeditor;
 
+import ikeyler.mlmod.util.TextUtil;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,24 +16,28 @@ import java.util.List;
 import java.util.Map;
 
 public class ItemEditor {
+    // screw viaversion!
+    private static final String vvLore = "VV|Protocol1_13_2To1_14|Lore";
+
     public static List<String> getLore(ItemStack stack) {
         List<String> lore = new ArrayList<>();
-        if (stack.hasTagCompound() && stack.getTagCompound().hasKey("display", 10)) {
-            NBTTagCompound display = stack.getTagCompound().getCompoundTag("display");
-            if (display.hasKey("Lore", 9)) {
-                NBTTagList tag = display.getTagList("Lore", 8);
-                for (int i = 0; i < tag.tagCount(); i++) {
-                    lore.add(tag.getStringTagAt(i));
+        if (stack.hasTag() && stack.getTag().contains("display")) {
+            CompoundNBT display = stack.getTag().getCompound("display");
+            if (display.contains("Lore")) {
+                ListNBT tag = display.getList("Lore", 8);
+                for (int i = 0; i < tag.size(); i++) {
+                    lore.add(TextUtil.getFormattedText(ITextComponent.Serializer.fromJson(tag.getString(i))));
                 }
             }
         }
         return lore;
     }
     public static void setLore(ItemStack stack, List<String> lore) {
-        NBTTagCompound display = stack.getOrCreateSubCompound("display");
-        NBTTagList tag = new NBTTagList();
-        lore.forEach(s -> tag.appendTag(new NBTTagString(s)));
-        display.setTag("Lore", tag);
+        CompoundNBT display = stack.getOrCreateTagElement("display");
+        display.remove(vvLore);
+        ListNBT tag = new ListNBT();
+        lore.forEach(s -> tag.add(StringNBT.valueOf(ITextComponent.Serializer.toJson(new StringTextComponent(s)))));
+        display.put("Lore", tag);
     }
     public static void editLore(ItemStack stack, int index, String text) {
         List<String> lore = getLore(stack);
@@ -42,10 +49,12 @@ public class ItemEditor {
         setLore(stack, lore);
     }
     public static void addLore(ItemStack stack, String text) {
-        NBTTagCompound display = stack.getOrCreateSubCompound("display");
-        NBTTagList tag = display.getTagList("Lore", 8);
-        tag.appendTag(new NBTTagString(text));
-        display.setTag("Lore", tag);
+        CompoundNBT display = stack.getOrCreateTagElement("display");
+        display.remove(vvLore);
+        ListNBT tag = display.getList("Lore", 8);
+        String json = ITextComponent.Serializer.toJson(new StringTextComponent(text));
+        tag.add(StringNBT.valueOf(json));
+        display.put("Lore", tag);
     }
     public static void removeLore(ItemStack stack, int index) {
         List<String> lore = getLore(stack);
@@ -56,7 +65,7 @@ public class ItemEditor {
         setLore(stack, new ArrayList<>());
     }
     public static void renameItem(ItemStack stack, String name) {
-        stack.setStackDisplayName(name);
+        stack.setHoverName(new StringTextComponent(name));
     }
     public static void addEnchantment(ItemStack stack, Enchantment ench, int level) {
         Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
@@ -75,17 +84,17 @@ public class ItemEditor {
         }
     }
     public static void setUnbreakable(ItemStack stack, boolean state) {
-        NBTTagCompound tag = stack.getTagCompound();
+        CompoundNBT tag = stack.getTag();
         if (tag == null) {
-            tag = new NBTTagCompound();
-            stack.setTagCompound(tag);
+            tag = new CompoundNBT();
+            stack.setTag(tag);
         }
-        tag.setBoolean("Unbreakable", state);
-        stack.setTagCompound(tag);
+        tag.putBoolean("Unbreakable", state);
+        stack.setTag(tag);
     }
     public static boolean isUnbreakable(ItemStack stack) {
-        NBTTagCompound tag = stack.getTagCompound();
+        CompoundNBT tag = stack.getTag();
         if (tag == null) return false;
-        return tag.hasKey("Unbreakable") && tag.getBoolean("Unbreakable");
+        return tag.contains("Unbreakable") && tag.getBoolean("Unbreakable");
     }
 }

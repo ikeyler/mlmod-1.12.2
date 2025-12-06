@@ -2,8 +2,10 @@ package ikeyler.mlmod.variables;
 
 import ikeyler.mlmod.itemeditor.ItemEditor;
 import ikeyler.mlmod.util.ItemUtil;
-import net.minecraft.item.Item;
+import ikeyler.mlmod.util.TextUtil;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.util.text.StringTextComponent;
 
 import java.util.Arrays;
 
@@ -33,7 +35,7 @@ public class Variable {
     }
 
     public static Variable fromItem(ItemStack item) {
-        String itemId = item.getItem().getRegistryName().getResourcePath();
+        String itemId = item.getItem().getRegistryName().getPath();
         VariableType type = null;
         switch (itemId) {
             case "book": type = VariableType.TEXT; break;
@@ -44,31 +46,31 @@ public class Variable {
                 type = (itemLore.contains("§dСОХРАНЕНО") || itemLore.contains("§dSAVED")) ? VariableType.VAR_SAVED : VariableType.VAR_UNSAVED;
                 break;
             case "item_frame":
-                type = item.getDisplayName().contains("⎘") ? VariableType.ARRAY_CONST : VariableType.ARRAY_TEMP;
+                type = item.getHoverName().getString().contains("⎘") ? VariableType.ARRAY_CONST : VariableType.ARRAY_TEMP;
                 break;
             case "shulker_shell": type = VariableType.COMPONENT; break;
             case "prismarine_shard": type = VariableType.VECTOR; break;
             default: break;
         }
         if (type == null) return null;
-        return new Variable(type, item.getDisplayName());
+        return new Variable(type, TextUtil.getFormattedText(item.getHoverName()));
     }
 
     public static ItemStack itemFromVariable(Variable variable) {
         ItemStack item = null;
         switch (variable.getType()) { // ignoring these warnings
-            case TEXT: item = Item.getByNameOrId("book").getDefaultInstance(); break;
-            case NUMBER: item = Item.getByNameOrId("slime_ball").getDefaultInstance(); break;
-            case LOCATION: item = Item.getByNameOrId("paper").getDefaultInstance(); break;
+            case TEXT: item = Items.BOOK.getDefaultInstance(); break;
+            case NUMBER: item = Items.SLIME_BALL.getDefaultInstance(); break;
+            case LOCATION: item = Items.PAPER.getDefaultInstance(); break;
             case VAR_UNSAVED: item = ItemUtil.getDynamicVar(false); break;
             case VAR_SAVED: item = ItemUtil.getDynamicVar(true); break;
             case ARRAY_CONST:
-            case ARRAY_TEMP: item = Item.getByNameOrId("item_frame").getDefaultInstance(); break;
-            case COMPONENT: item = Item.getByNameOrId("shulker_shell").getDefaultInstance(); break;
-            case VECTOR: item = Item.getByNameOrId("prismarine_shard").getDefaultInstance(); break;
+            case ARRAY_TEMP: item = Items.ITEM_FRAME.getDefaultInstance(); break;
+            case COMPONENT: item = Items.SHULKER_SHELL.getDefaultInstance(); break;
+            case VECTOR: item = Items.PRISMARINE_SHARD.getDefaultInstance(); break;
             default: break;
         }
-        item.setStackDisplayName(variable.getName());
+        item.setHoverName(new StringTextComponent(variable.getName()));
         return item;
     }
 

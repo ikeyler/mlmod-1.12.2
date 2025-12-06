@@ -1,17 +1,12 @@
 package ikeyler.mlmod.messages;
 
 import ikeyler.mlmod.Main;
-import ikeyler.mlmod.cfg.Configuration;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
+import ikeyler.mlmod.cfg.Config;
+import ikeyler.mlmod.util.ModUtils;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.FileReader;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -28,15 +23,15 @@ public class MessageCollector {
 
     public MessageCollector() {
         try {
-            if (dataFile.createNewFile()) Main.logger.info("created msgcollector data file: {}", dataFile.getName());
+            if (dataFile.createNewFile()) Main.logger.info("created data file: {}", dataFile.getName());
         }
         catch (IOException e) {
-            Main.logger.error("could not create msgcollector data file:", e);
+            Main.logger.error("could not create data file:", e);
         }
     }
     public void addEntry(MessageType type, String player, String data) {
-        if (!Configuration.GENERAL.MESSAGE_COLLECTOR.get()) return;
-        if (!dataFile.exists()) {Main.logger.error("data file doesn't exist"); return;}
+        if (!Config.MESSAGE_COLLECTOR.get()) return;
+        if (!dataFile.exists()) { Main.logger.error("data file doesn't exist"); return; }
         // timestamp type | player (optional): data
         String timestamp = LocalDateTime.now().format(formatter);
         StringBuilder entry = new StringBuilder();
@@ -79,16 +74,15 @@ public class MessageCollector {
     }
     private void searchCompleted(String source) {
         if (source.equalsIgnoreCase("mc")) {
-            Minecraft mc = Minecraft.getMinecraft();
             if (!data.isEmpty()) {
-                TextComponentString component = new TextComponentString("");
-                component.appendText((MOD_PREFIX)).appendSibling(new TextComponentTranslation("mlmod.messages.collector.search_found", data.size()));
-                component.appendText("\n");
-                data.stream().map(s -> {String[] parts = s.split("\\|", 2); return "§7- §7" + parts[0] + "§f" + parts[1] + "\n";}).forEach(component::appendText);
-                mc.player.sendMessage(component);
+                StringTextComponent component = new StringTextComponent("");
+                component.append(MOD_PREFIX).append(new TranslationTextComponent("mlmod.messages.collector.search_found", data.size()));
+                component.append("\n");
+                data.stream().map(s -> {String[] parts = s.split("\\|", 2); return "§7- §7" + parts[0] + "§f" + parts[1] + "\n";}).forEach(component::append);
+                ModUtils.sendMessage(component);
                 return;
             }
-            mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.collector.search_not_found"));
+            ModUtils.sendMessage(new TranslationTextComponent("mlmod.messages.collector.search_not_found"));
         }
     }
 }
