@@ -29,5 +29,3 @@ public class EventListener {
         ModUtils.LATEST_WORLD_JOIN = LocalDateTime.now();
     }
 }
-
-

@@ -1,5 +1,6 @@
 package ikeyler.mlmod.messages;
 
+import ikeyler.mlmod.Main;
 import ikeyler.mlmod.cfg.Configuration;
 import ikeyler.mlmod.util.ModUtils;
 import ikeyler.mlmod.util.SoundUtil;
@@ -22,50 +23,33 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ikeyler.mlmod.Main.messageCollector;
-import static ikeyler.mlmod.Main.logger;
 
 public class Manager {
     private final List<Message> messageList = new ArrayList<>();
     private final Minecraft mc = Minecraft.getMinecraft();
     private final Pattern adPattern = Pattern.compile("/?\\b(ad|ад|id|айди|join)\\s+(\\S+)");
-    private String you = "you";
-    private final String translatePrefix = "[Перевести]";
-    private List<String> ignoredPlayers = new ArrayList<>();
-    private final List<Message> ccDisabledMessages = Arrays.asList(
-            Messages.CC_DISABLED, Messages.CC_DISABLED2, Messages.CC_DISABLED3,
-            Messages.CC_DISABLED4, Messages.CC_DISABLED5
-    );
-    private boolean init;
+    private String you;
+    private final List<String> translatePrefix = Arrays.asList("[Перевести]", "[Translate]");
+    private List<String> ignoredPlayers;
 
     public void addMessages(List<Message> messages) {
         messageList.addAll(messages);
+    }
+    public void update() {
+        you = new TextComponentTranslation("mlmod.you").getUnformattedText();
+        updateIgnoredPlayers();
     }
     public void updateIgnoredPlayers() {
         ignoredPlayers = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
     }
     public Message getMessage(String message) {
-        if (Messages.CREATIVE_CHAT.matches(message)) return Messages.CREATIVE_CHAT;
-        if (Messages.DONATE_CHAT.matches(message)) return Messages.DONATE_CHAT;
-
         return messageList.stream()
                 .filter(msg -> msg.matches(message)).findFirst().orElse(null);
     }
 
     public void processMessages(Message message, ClientChatReceivedEvent event) {
-        if (!init && (init=true)) {
-            you = new TextComponentTranslation("mlmod.you").getUnformattedText();
-            updateIgnoredPlayers();
-        }
         if (message == null) return;
         if (!message.isActive() || (!Configuration.GENERAL.ADS.get() && Messages.AD_MESSAGES.contains(message))) {
-            event.setCanceled(true);
-            return;
-        }
-        if (ccDisabledMessages.contains(message)) {
-            if (message == Messages.CC_DISABLED5) {
-                event.setMessage(new TextComponentTranslation("mlmod.messages.use_excl_mark_to_cc"));
-                return;
-            }
             event.setCanceled(true);
             return;
         }
@@ -91,12 +75,15 @@ public class Manager {
             return;
         }
 
+        /*
+        creative & donate chat handling
+        */
         if (message == Messages.CREATIVE_CHAT || message == Messages.DONATE_CHAT) {
             boolean hideMessage = false;
             boolean setMessage = false;
-            String[] split = matcher.group(1).split(" ");
+            String[] split = matcher.group(2).split(" ");
             String player = split[split.length-1];
-            String msg = trimMessage(matcher.group(2));
+            String msg = trimMessage(matcher.group(3));
             String reply = message == Messages.CREATIVE_CHAT ? "/cc "+player+", " : "/dc "+player+", ";
             MessageType type = message == Messages.CREATIVE_CHAT ? MessageType.CREATIVE_CHAT : MessageType.DONATE_CHAT;
             if (isPlayerIgnored(player)) {
@@ -106,7 +93,7 @@ public class Manager {
             if (hideMessage) return;
 
             List<ITextComponent> siblingList = messageComponent.getSiblings();
-            if (Configuration.GENERAL.HIDE_TRANSLATE.get() && siblingList.get(siblingList.size()-1).getUnformattedText().equalsIgnoreCase(translatePrefix)) {
+            if (Configuration.GENERAL.HIDE_TRANSLATE.get() && translatePrefix.contains(siblingList.get(siblingList.size()-1).getUnformattedText())) {
                 messageComponent = new TextComponentString("");
                 siblingList.subList(0, siblingList.size()-1).forEach(messageComponent::appendSibling);
                 setMessage = true;
@@ -126,24 +113,31 @@ public class Manager {
             }
 
             if (Configuration.GENERAL.CHAT_PLAYER_INTERACT.get()) {
+                String sep = "§§";
                 ITextComponent component = messageComponent.createCopy();
                 Style style = messageComponent.getStyle()
                         .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.chat_player_interact.click", player)))
-                        .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodplayerinteract " + player + ":::" + msg + ":::" + reply));
+                        .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodplayerinteract " + player + sep + msg + sep + reply));
                 component.setStyle(style);
-                Matcher adMatcher = adPattern.matcher(msg.toLowerCase());
-                List<String> adList = new ArrayList<>();
-                while (adMatcher.find()) {String[] spl = adMatcher.group(0).split(" "); adList.add("/ad "+spl[spl.length-1].replace(",", ""));}
-                if (!adList.isEmpty()) {
-                    Style adStyle = TextUtil.newStyle().
-                            setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodshowmessageads " + String.join(",", adList))).
-                            setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.show_world_ads")));
-                    TextComponentString adComponent = new TextComponentString(" ⬈");
-                    adComponent.setStyle(adStyle);
-                    component.appendSibling(adComponent);
+                if (Configuration.CREATIVE.SHOW_MESSAGE_ADS.get()) {
+                    Matcher adMatcher = adPattern.matcher(msg.toLowerCase());
+                    List<String> adList = new ArrayList<>();
+                    while (adMatcher.find()) {
+                        String[] spl = adMatcher.group(0).split(" ");
+                        String adId = spl[spl.length - 1].replace(",", "");
+                        if (!adList.contains(adId))
+                            adList.add("/ad " + adId.replace(",", ""));
+                    }
+                    if (!adList.isEmpty()) {
+                        Style adStyle = TextUtil.newStyle().
+                                setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodshowmessageads " + String.join(",", adList))).
+                                setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.show_world_ads")));
+                        TextComponentString adComponent = new TextComponentString(" ⬈");
+                        adComponent.setStyle(adStyle);
+                        messageComponent.appendSibling(adComponent);
+                    }
                 }
                 setMessage = true;
-                messageComponent = component;
             }
             if (setMessage) event.setMessage(messageComponent);
             return;
@@ -152,7 +146,7 @@ public class Manager {
         if (message == Messages.PM || message == Messages.PM_REPLY) {
             boolean hideMessage = false;
             String player = message == Messages.PM ? matcher.group(1) : you;
-            String msg = trimMessage(matcher.group(2));
+            String msg = trimMessage(matcher.group(3));
             MessageType type = message == Messages.PM ? MessageType.PRIVATE_MESSAGE : MessageType.PM_REPLY;
             String data = message == Messages.PM ? msg : matcher.group(1)+" -> "+msg;
             if (isPlayerIgnored(player)) {
@@ -175,18 +169,36 @@ public class Manager {
             return;
         }
 
-        if (message == Messages.WORLD_INVITE && Configuration.CREATIVE.SHOW_WORLD_ID.get()) {
+        if (message == Messages.WORLD_INVITE) {
+            List<String> ignoredWorlds = Arrays.asList(Configuration.CREATIVE.IGNORED_WORLDS);
+            if (!Configuration.CREATIVE.SHOW_WORLD_ID.get() && ignoredWorlds.isEmpty()) return;
             try {
                 String[] split = messageComponent.getSiblings().get(0).getStyle().getClickEvent().getValue().split(" ");
-                String worldID = split[split.length-1];
-                event.setMessage(messageComponent.createCopy().appendText("§8(ID: "+worldID+")"));
-            } catch (Exception e) {
-                logger.error("error while reformatting world invite:", e);}
+                String worldId = split[split.length-1];
+                if (!ignoredWorlds.isEmpty()) {
+                    String worldName = matcher.group(2).toLowerCase();
+                    List<String> ignoredNames = new ArrayList<>(ignoredWorlds)
+                            .stream().map(s -> s.replaceFirst(":", "").toLowerCase()).collect(Collectors.toList());
+                    if (ignoredWorlds.contains(worldId) || ignoredNames.stream().anyMatch(s -> s.contains(worldName))) {
+                        event.setCanceled(true);
+                        return;
+                    }
+                }
+                if (!Configuration.CREATIVE.SHOW_WORLD_ID.get()) return;
+                TextComponentTranslation idComp = new TextComponentTranslation("mlmod.messages.world_id", "§8§o"+worldId);
+                idComp.setStyle(TextUtil.clickToCopyStyle("/ad "+worldId, false));
+                event.setMessage(messageComponent.createCopy().appendSibling(idComp));
+            }
+            catch (Exception e) {
+                Main.logger.error("error while reformatting world invite:", e);
+            }
         }
     }
 
     private String trimMessage(String msg) {
-        return StringUtils.removeEnd(msg, " "+translatePrefix).trim();
+        return translatePrefix.stream().filter(msg::endsWith).findFirst()
+                .map(p -> StringUtils.removeEnd(msg, p).trim())
+                .orElse(msg);
     }
     private boolean isPlayerIgnored(String player) {
         return ignoredPlayers.contains(player.toLowerCase()) &&

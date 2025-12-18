@@ -28,6 +28,9 @@ public class Configuration {
     @Config.LangKey("mlmod.config.category.chat_formatting")
     @Config.Comment("mlmod.config.category.chat_formatting.tooltip")
     public static ChatFormatting CHAT_FORMATTING = new ChatFormatting();
+    @Config.LangKey("mlmod.config.category.misc")
+    @Config.Comment("mlmod.config.category.misc.tooltip")
+    public static Misc MISC = new Misc();
 
     public static class General {
         @Config.LangKey("mlmod.config.option.ignored_players")
@@ -82,13 +85,16 @@ public class Configuration {
     }
 
     public static class Creative {
+        @Config.LangKey("mlmod.config.option.ignored_worlds")
+        @Config.Comment("mlmod.config.option.ignored_worlds.tooltip")
+        public String[] IGNORED_WORLDS = {};
         @Config.LangKey("mlmod.config.option.world_invite")
         public Bool WORLD_INVITE = Bool.TRUE;
         @Config.LangKey("mlmod.config.option.dev_mode_join")
         public Bool DEV_MODE_JOIN = Bool.TRUE;
         @Config.LangKey("mlmod.config.option.show_world_id")
         @Config.Comment("mlmod.config.option.show_world_id.tooltip")
-        public Bool SHOW_WORLD_ID = Bool.FALSE;
+        public Bool SHOW_WORLD_ID = Bool.TRUE;
         @Config.LangKey("mlmod.config.option.play_sound")
         @Config.Comment("mlmod.config.option.play_sound.tooltip")
         public Bool PLAY_SOUND = Bool.FALSE;
@@ -97,6 +103,11 @@ public class Configuration {
         public Bool SOUND_COMMAND = Bool.TRUE;
         @Config.LangKey("mlmod.config.option.dev_night_mode")
         public Bool DEV_NIGHT_MODE = Bool.FALSE;
+        @Config.LangKey("mlmod.config.option.dev_night_mode_time")
+        @Config.Comment("mlmod.config.option.dev_night_mode_time.tooltip")
+        public int DEV_NIGHT_MODE_TIME = 18000;
+        @Config.LangKey("mlmod.config.option.show_message_ads")
+        public Bool SHOW_MESSAGE_ADS = Bool.TRUE;
     }
 
     public static class ChatFormatting {
@@ -108,6 +119,15 @@ public class Configuration {
         @Config.LangKey("mlmod.config.option.chat_formatting_dc")
         @Config.Comment("mlmod.config.option.chat_formatting_dc.tooltip")
         public String DONATE_CHAT = "&2DC &8|";
+    }
+
+    public static class Misc {
+        @Config.LangKey("mlmod.config.option.detect_mineland")
+        @Config.Comment("mlmod.config.option.detect_mineland.tooltip")
+        public Bool DETECT_MINELAND = Bool.FALSE;
+        @Config.LangKey("mlmod.config.option.mineland_ips")
+        @Config.Comment("mlmod.config.option.mineland_ips.tooltip")
+        public String MINELAND_IPS = "mineland.net, play-ml.ru";
     }
 
     public enum Bool {
@@ -150,7 +170,7 @@ public class Configuration {
         if (event.getModID().equals(Reference.MOD_ID)) {
             ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
             Messages.updateMessages();
-            Main.messageManager.updateIgnoredPlayers();
+            Main.messageManager.update();
             if (!CREATIVE.DEV_NIGHT_MODE.get()) ModUtils.disableNightDevMode();
             Main.logger.info("config updated");
         }

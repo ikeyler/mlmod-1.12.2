@@ -2,18 +2,30 @@ package ikeyler.mlmod.util;
 
 import ikeyler.mlmod.cfg.Configuration;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.util.text.TextComponentTranslation;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ModUtils {
     private static final Minecraft mc = Minecraft.getMinecraft();
     public static final String MOD_PREFIX = "§8» §f";
     public static final String NOTIFICATION_SOUND = "entity.experience_orb.pickup";
     public static boolean NIGHT_DEV_MODE = false;
-    public static final float GAME_GAMMA_SETTING = mc.gameSettings.gammaSetting;
+    public static float GAME_GAMMA_SETTING = mc.gameSettings.gammaSetting;
     public static LocalDateTime LATEST_WORLD_JOIN = LocalDateTime.now();
 
+    public static boolean isOnMineland() {
+        ServerData data = mc.getCurrentServerData();
+        return data != null && Arrays.stream(Configuration.MISC.MINELAND_IPS.split(","))
+                .anyMatch(ip -> data.serverIP.contains(ip.trim()));
+    }
+    public static List<String> getScoreboardLines() {
+        return new ArrayList<>(mc.world.getScoreboard().getObjectiveNames());
+    }
     public static void enableNightDevMode() {
         if (Configuration.CREATIVE.DEV_NIGHT_MODE.get() && mc.player.isCreative()) {
             NIGHT_DEV_MODE = true;

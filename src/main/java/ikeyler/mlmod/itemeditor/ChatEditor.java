@@ -30,7 +30,7 @@ public class ChatEditor {
 
     public void printChatEditor() {
         Minecraft mc = Minecraft.getMinecraft();
-        if (item.isItemEqual(Items.AIR.getDefaultInstance())) {
+        if (item.getItem() == Items.AIR) {
             mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.itemeditor.empty_hand"));
             return;
         }

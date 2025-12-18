@@ -4,7 +4,6 @@ import ikeyler.mlmod.cfg.Configuration;
 import ikeyler.mlmod.itemeditor.ChatEditor;
 import ikeyler.mlmod.itemeditor.ItemEditor;
 import ikeyler.mlmod.messages.MessageType;
-import ikeyler.mlmod.messages.Messages;
 import ikeyler.mlmod.util.ItemUtil;
 import ikeyler.mlmod.util.ModUtils;
 import ikeyler.mlmod.util.SoundUtil;
@@ -38,15 +37,13 @@ import static ikeyler.mlmod.util.ModUtils.MOD_PREFIX;
 
 public class ChatListener {
     private final Minecraft mc = Minecraft.getMinecraft();
-    private boolean messagesUpdated = false;
     private final List<String> commands = new ArrayList<>(
             Arrays.asList("/item", "/var", "/text", "/num", "/msgs", "/ignorelist", "/head", "/nightmode", "/vars", "/varsave"));
 
     @SubscribeEvent
     public void onChatReceivedEvent(ClientChatReceivedEvent event) {
-        if (!messagesUpdated && (messagesUpdated=true)) {
-            Messages.updateMessages();
-        }
+        if (Configuration.MISC.DETECT_MINELAND.get() && !ModUtils.isOnMineland())
+            return;
         messageManager.processMessages(messageManager.getMessage(event.getMessage().getUnformattedText()), event);
     }
 
@@ -57,6 +54,7 @@ public class ChatListener {
         String start = split.length > 0 ? split[0] : "";
 
         if (message.startsWith("!") && Configuration.GENERAL.EXCL_MARK_TO_CHAT != Configuration.CHAT_MODE.OFF) {
+            if (Configuration.MISC.DETECT_MINELAND.get() && !ModUtils.isOnMineland()) return;
             String newMessage = message.replaceFirst("!", "").trim();
             if (newMessage.isEmpty()) return;
             event.setCanceled(true);
@@ -74,44 +72,41 @@ public class ChatListener {
         switch (start.toLowerCase()) {
             case "/mlmodplayerinteract":
                 event.setCanceled(true);
-                if (split.length > 1) {
-                    String[] spl = message.replaceFirst("/mlmodplayerinteract ", "").split(":::");
-                    String player = spl[0];
-                    String msg = spl.length > 1 ? spl[1] : "";
-                    String chat = spl.length > 2 ? spl[2] : "/m " + player + " ";
-                    TextComponentTranslation menu = new TextComponentTranslation("mlmod.messages.chat_player_interact", "§7§o"+player);
-                    Style write = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, chat));
-                    Style copy = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodcopytext "+msg)).setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentString(msg)));
-                    Style report = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/report " + player));
-                    Style block = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlignore " + player));
-                    Style find = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/msgs find " + player));
-                    Style who = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/who " + player));
-                    menu.appendText("\n").appendSibling(new TextComponentTranslation("mlmod.messages.reply").setStyle(write)).appendText(" ")
-                            .appendSibling(new TextComponentTranslation("mlmod.messages.copy_message").setStyle(copy)).appendText(" ")
-                            .appendSibling(new TextComponentTranslation("mlmod.messages.report").setStyle(report)).appendText(" ")
-                            .appendSibling(new TextComponentTranslation("mlmod.messages.block").setStyle(block)).appendText(" ")
-                            .appendSibling(new TextComponentTranslation("mlmod.messages.find_messages").setStyle(find)).appendText(" ")
-                            .appendSibling(new TextComponentTranslation("mlmod.messages.find_who").setStyle(who));
-                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(menu));
-                }
+                if (split.length < 2) return;
+                String[] msgSplit = message.replaceFirst("/mlmodplayerinteract ", "").split("§§");
+                String player = msgSplit[0];
+                String msg = msgSplit.length > 1 ? msgSplit[1] : "";
+                String chat = msgSplit.length > 2 ? msgSplit[2] : "/m " + player + " ";
+                TextComponentString playerComp = new TextComponentString("§7§o"+player+" §a⧉");
+                playerComp.setStyle(TextUtil.clickToCopyStyle(player, false));
+                TextComponentTranslation menu = new TextComponentTranslation("mlmod.messages.chat_player_interact", playerComp);
+                Style write = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, chat));
+                Style copy = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodcopytext "+msg)).setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentString(msg)));
+                Style report = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/report " + player));
+                Style block = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlignore " + player));
+                Style find = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/msgs find " + player + " "));
+                Style who = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/who " + player));
+                menu.appendText("\n").appendSibling(new TextComponentTranslation("mlmod.messages.reply").setStyle(write)).appendText(" ")
+                        .appendSibling(new TextComponentTranslation("mlmod.messages.copy_message").setStyle(copy)).appendText(" ")
+                        .appendSibling(new TextComponentTranslation("mlmod.messages.report").setStyle(report)).appendText(" ")
+                        .appendSibling(new TextComponentTranslation("mlmod.messages.block").setStyle(block)).appendText(" ")
+                        .appendSibling(new TextComponentTranslation("mlmod.messages.find_messages").setStyle(find)).appendText(" ")
+                        .appendSibling(new TextComponentTranslation("mlmod.messages.find_who").setStyle(who));
+                mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(menu));
                 break;
 
             case "/mlignore":
                 event.setCanceled(true);
                 if (split.length < 2) return;
-                String player = split[1];
-                List<String> players = new ArrayList<>(Arrays.asList(Configuration.GENERAL.IGNORED_PLAYERS));
-                Style add_on_mineland = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ignore add " + player + " "));
-                Style remove_on_mineland = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ignore remove " + player + " "));
-                if (!players.contains(player)) {
-                    players.add(player);
-                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation("mlmod.messages.ignore.player_added", player).appendText(". ").appendSibling(
-                            new TextComponentTranslation("mlmod.messages.ignore.add_on_mineland", new TextComponentTranslation("mlmod.mineland"))).setStyle(add_on_mineland)));
-                } else {
-                    players.remove(player);
-                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation("mlmod.messages.ignore.player_removed", player).appendText(". ").appendSibling(
-                            new TextComponentTranslation("mlmod.messages.ignore.remove_on_mineland", new TextComponentTranslation("mlmod.mineland"))).setStyle(remove_on_mineland)));
-                }
+                String ignorePlayer = split[1].toLowerCase();
+                List<String> players = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
+                boolean containsPlayer = players.contains(ignorePlayer);
+                String ignoreAction = (containsPlayer ? "/ignore remove " : "/ignore add ") + ignorePlayer + " ";
+                String ignoreMessage = containsPlayer ? "mlmod.messages.ignore.player_removed" : "mlmod.messages.ignore.player_added";
+                Style ignoreStyle = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, ignoreAction));
+                if (!containsPlayer) players.add(ignorePlayer);
+                else players.remove(ignorePlayer);
+                mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation(ignoreMessage, ignorePlayer).setStyle(ignoreStyle)));
                 Configuration.GENERAL.IGNORED_PLAYERS = players.toArray(new String[0]);
                 ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
                 messageManager.updateIgnoredPlayers();
@@ -142,6 +137,7 @@ public class ChatListener {
                     item.setStackDisplayName(TextUtil.replaceColorCodes(name));
                     mc.player.addItemStackToInventory(item);
                     mc.displayGuiScreen(new GuiInventory(mc.player));
+                    mc.ingameGUI.setOverlayMessage(new TextComponentTranslation("mlmod.messages.var.var_given"), false);
                 }
                 break;
 
@@ -313,7 +309,7 @@ public class ChatListener {
                         break;
                     case "nbt":
                         String nbt = itemStack.hasTagCompound() ? itemStack.getTagCompound().toString() : "{}";
-                        mc.player.sendMessage(new TextComponentString(MOD_PREFIX+nbt).setStyle(TextUtil.clickToCopyStyle(nbt)));
+                        mc.player.sendMessage(new TextComponentString(MOD_PREFIX+nbt).setStyle(TextUtil.clickToCopyStyle(nbt, false)));
                         return;
                     case "enchlist":
                         List<String> enchantments = Enchantment.REGISTRY.getKeys().stream().map(ResourceLocation::getResourcePath).collect(Collectors.toList());
@@ -441,16 +437,18 @@ public class ChatListener {
             case "/mlmodshowmessageads":
                 event.setCanceled(true);
                 if (split.length < 2) return;
-                TextComponentString adComponent = new TextComponentString(MOD_PREFIX);
-                adComponent.appendSibling(new TextComponentTranslation("mlmod.messages.world_list"));
-                adComponent.appendText("\n");
-                for (String c:message.replaceFirst("/mlmodshowmessageads ", "").split(",")) {
-                    TextComponentString ad = new TextComponentString("§8- §7"+c);
+                TextComponentString adsComponent = new TextComponentString(MOD_PREFIX);
+                adsComponent.appendSibling(new TextComponentTranslation("mlmod.messages.world_list"));
+                adsComponent.appendText("\n");
+                for (String adCmd:message.replaceFirst("/mlmodshowmessageads ", "").split(",")) {
+                    TextComponentString ad = new TextComponentString("§8- §7"+adCmd);
+                    ad.setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, adCmd))
+                            .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.world_list.join"))));
+                    ad.appendSibling(new TextComponentString(" §a⧉").setStyle(TextUtil.clickToCopyStyle(adCmd, false)));
                     ad.appendText("\n");
-                    ad.setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, c)));
-                    adComponent.appendSibling(ad);
+                    adsComponent.appendSibling(ad);
                 }
-                mc.player.sendMessage(adComponent);
+                mc.player.sendMessage(adsComponent);
                 break;
             case "/mlmodcopytext":
                 event.setCanceled(true);

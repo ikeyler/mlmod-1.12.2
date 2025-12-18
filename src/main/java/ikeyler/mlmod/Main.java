@@ -7,6 +7,7 @@ import ikeyler.mlmod.variables.VarCollector;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,5 +29,12 @@ public class Main
         messageManager.addMessages(Messages.MESSAGES);
         messageManager.addMessages(Messages.AD_MESSAGES);
         Keybinds.register();
+    }
+    @EventHandler
+    public static void onLoadComplete(FMLLoadCompleteEvent event) {
+        messageManager.addMessages(Messages.MESSAGES);
+        messageManager.addMessages(Messages.AD_MESSAGES);
+        messageManager.update();
+        Messages.updateMessages();
     }
 }
