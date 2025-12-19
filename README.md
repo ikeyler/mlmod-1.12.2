@@ -15,6 +15,9 @@
 - вспомогательные бинды на команды
 - другие настройки, доступные в конфигурации мода
 
+> [!NOTE]  
+> Владелец - **den107**, официального tg/dsc у мода нет - ченджлог публикуется на форуме Mineland
+
 
 <img width="768" height="234" alt="{408A6CB6-BC8C-4E44-98C1-AD2B21D7783D}" src="https://github.com/user-attachments/assets/91e1e0b5-b8ef-481f-8c63-578c97ea44bc" />
 <img width="1587" height="337" alt="{3CC9E0FE-B5B7-4F52-9F26-14F10431802E}" src="https://github.com/user-attachments/assets/6d1ff2cc-0506-460f-94cc-1e6f2bab79b0" />
