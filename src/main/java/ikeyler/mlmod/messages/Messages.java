@@ -84,9 +84,9 @@ public class Messages {
             "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀",
 
             "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\\s*CONGRATULATIONS!\n(.*?) just bought (.*?)" +
-                    "Congratulate them on the purchase!\n" +
-                    "(.*?)\n\n" +
-                    "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"
+            "Congratulate them on the purchase!\n" +
+            "(.*?)\n\n" +
+            "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"
     );
     public static final Message PLAYER_VOTED = new Message(" \n" +
             " \\| Игрок (.*?) проголосовал за Mineland!\n" +
@@ -97,8 +97,8 @@ public class Messages {
                     "\\| The TOP 1 voter of the month will be awarded with a\n " +
                     "\\| Minecraft license key\\.\\s*\\[Vote now\\]\\s*"
     );
-    public static final Message STREAM = new Message(" \n \\| Идет стрим игрока (.*?)\n \\| Кликни, чтобы посмотреть: \n(.*?)",
-            " \n \\| (.*?) is livestreaming now!\n \\| Click to view: \n(.*?)"
+    public static final Message STREAM = new Message(" \n \\| Идет стрим игрока (.*?)\n \\| Кликни, чтобы посмотреть:\\s*(.*)",
+            " \n \\| (.*?) is livestreaming now!\n \\| Click to view:\\s*(.*)"
     );
     public static final Message NEW_ASK = new Message(
             "Вопросы » Вопрос от (.*?)\\. Сервер: (.*?)\\.",
@@ -121,6 +121,16 @@ public class Messages {
             " \\| Creative chat has been created instead of global chat - \\/cc",
             " \\| Want to turn this chat on and chat with players\\? - \\/cc on",
             " \\| Is this chat bothering you\\? - \\/cc off"
+    );
+
+    public static final Message LOGIN_CHECK = new Message(
+            "Guard » Checking in progress, please wait\\.\\.\\. \n Do not move, everything happens automatically\\.\\s*",
+            "Guard » Enter code from the image into chat\\.\\s*If you don't see the image, you need to completely reinstall Minecraft\\."
+    );
+
+    public static final Message WORLD_MODE_CHANGE = new Message(
+            "Система » Ты вошёл в режим (игры|разработчика)\\.",
+            "System » You're now in (playing|developer) mode\\."
     );
 
     // ad messages
@@ -306,7 +316,7 @@ public class Messages {
     public static final List<Message> MESSAGES = new ArrayList<>(
             Arrays.asList(REWARD_STORAGE, WELCOME_TO_MINELAND, DEV_MODE_JOIN, UNREAD_MAIL, UNANSWERED_ASKS, WORLD_INVITE, NEW_VIDEO, PUNISHMENT_BROADCAST,
                     DONATION, PLAYER_VOTED, STREAM, NEW_ASK, CREATIVE_CHAT, DONATE_CHAT, PM, PM_REPLY, PARTY_CHAT,
-                    CC_DISABLED
+                    CC_DISABLED, LOGIN_CHECK, WORLD_MODE_CHANGE
             )
     );
 
@@ -341,5 +351,6 @@ public class Messages {
         PLAYER_VOTED.setActive(messages.PLAYER_VOTED.get());
         STREAM.setActive(messages.STREAM.get());
         NEW_ASK.setActive(messages.NEW_ASK.get());
+        LOGIN_CHECK.setActive(messages.LOGIN_CHECK.get());
     }
 }

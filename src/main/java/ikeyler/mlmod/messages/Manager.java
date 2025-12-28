@@ -6,10 +6,7 @@ import ikeyler.mlmod.util.ModUtils;
 import ikeyler.mlmod.util.SoundUtil;
 import ikeyler.mlmod.util.TextUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -31,6 +28,7 @@ public class Manager {
     private String you;
     private final List<String> translatePrefix = Arrays.asList("[Перевести]", "[Translate]");
     private List<String> ignoredPlayers;
+    private final List<Message> abarMessages = Arrays.asList(Messages.WORLD_MODE_CHANGE, Messages.LOGIN_CHECK);
 
     public void addMessages(List<Message> messages) {
         messageList.addAll(messages);
@@ -51,6 +49,12 @@ public class Manager {
         if (message == null) return;
         if (!message.isActive() || (!Configuration.GENERAL.ADS.get() && Messages.AD_MESSAGES.contains(message))) {
             event.setCanceled(true);
+            mc.player.sendMessage(new TextComponentString("hide: "+message.getMatcher().pattern()));
+            return;
+        }
+        if (Configuration.GENERAL.MESSAGES_IN_ACTIONBAR.get() && abarMessages.contains(message)) {
+            event.setCanceled(true);
+            mc.ingameGUI.setOverlayMessage(event.getMessage(), false);
             return;
         }
 
@@ -125,14 +129,15 @@ public class Manager {
                     while (adMatcher.find()) {
                         String[] spl = adMatcher.group(0).split(" ");
                         String adId = spl[spl.length - 1].replace(",", "");
-                        if (!adList.contains(adId))
+                        if (!adList.contains(adId) && adId.length()>2)
                             adList.add("/ad " + adId.replace(",", ""));
                     }
                     if (!adList.isEmpty()) {
                         Style adStyle = TextUtil.newStyle().
                                 setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodshowmessageads " + String.join(",", adList))).
                                 setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.show_world_ads")));
-                        TextComponentString adComponent = new TextComponentString(" ⬈");
+                        String adSymbol = msg.endsWith(" ") ? "⬈" : " ⬈";
+                        TextComponentString adComponent = new TextComponentString(adSymbol);
                         adComponent.setStyle(adStyle);
                         messageComponent.appendSibling(adComponent);
                     }
@@ -175,19 +180,21 @@ public class Manager {
             try {
                 String[] split = messageComponent.getSiblings().get(0).getStyle().getClickEvent().getValue().split(" ");
                 String worldId = split[split.length-1];
+                String worldName = matcher.group(2);
                 if (!ignoredWorlds.isEmpty()) {
-                    String worldName = matcher.group(2).toLowerCase();
                     List<String> ignoredNames = new ArrayList<>(ignoredWorlds)
                             .stream().map(s -> s.replaceFirst(":", "").toLowerCase()).collect(Collectors.toList());
-                    if (ignoredWorlds.contains(worldId) || ignoredNames.stream().anyMatch(s -> s.contains(worldName))) {
+                    if (ignoredWorlds.contains(worldId) || ignoredNames.stream().anyMatch(s -> s.contains(worldName.toLowerCase()))) {
                         event.setCanceled(true);
                         return;
                     }
                 }
                 if (!Configuration.CREATIVE.SHOW_WORLD_ID.get()) return;
-                TextComponentTranslation idComp = new TextComponentTranslation("mlmod.messages.world_id", "§8§o"+worldId);
-                idComp.setStyle(TextUtil.clickToCopyStyle("/ad "+worldId, false));
-                event.setMessage(messageComponent.createCopy().appendSibling(idComp));
+                TextComponentTranslation info = new TextComponentTranslation("mlmod.messages.world_id", "§8§o"+worldId);
+                info.setStyle(TextUtil.clickToCopyStyle("/ad "+worldId, "id", false));
+                info.appendSibling(new TextComponentTranslation("mlmod.copy")
+                        .setStyle(TextUtil.clickToCopyStyle(worldName, "name", false)));
+                event.setMessage(messageComponent.createCopy().appendSibling(info));
             }
             catch (Exception e) {
                 Main.logger.error("error while reformatting world invite:", e);

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import static ikeyler.mlmod.util.ModUtils.VAR_SEPARATOR;
 
 public class VarCollector {
     private final File dataFile = new File("mlmodVars.txt");
@@ -23,14 +24,20 @@ public class VarCollector {
     }
 
     public void addVariable(Variable variable) {
-        // varType::varName
-        writeLine(variable.getType().name()+"::"+variable.getName());
+        // varType::varName::varNbt
+        String line = variable.getType().name() +
+                VAR_SEPARATOR +
+                variable.getName() +
+                VAR_SEPARATOR +
+                variable.getNbt();
+        writeLine(line);
     }
 
     public boolean removeVariable(Variable variable) {
         try {
             List<String> lines = readAll();
-            boolean contains = lines.removeIf(line -> line.contains(variable.getType().name() + "::" + variable.getName()));
+            boolean contains = lines.removeIf(line -> line.contains(
+                    variable.getType().name() + VAR_SEPARATOR + variable.getName() + VAR_SEPARATOR + variable.getNbt()));
             if (contains) {
                 Files.write(Paths.get(dataFile.getPath()), lines);
                 return true;

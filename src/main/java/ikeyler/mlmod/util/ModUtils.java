@@ -1,9 +1,11 @@
 package ikeyler.mlmod.util;
 
+import ikeyler.mlmod.Reference;
 import ikeyler.mlmod.cfg.Configuration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraftforge.fml.client.config.GuiConfig;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -17,7 +19,11 @@ public class ModUtils {
     public static boolean NIGHT_DEV_MODE = false;
     public static float GAME_GAMMA_SETTING = mc.gameSettings.gammaSetting;
     public static LocalDateTime LATEST_WORLD_JOIN = LocalDateTime.now();
+    public static final String VAR_SEPARATOR = "::";
 
+    public static void openConfigGui() {
+        mc.displayGuiScreen(new GuiConfig(mc.currentScreen, Reference.MOD_ID, new TextComponentTranslation("mlmod.config").getFormattedText()));
+    }
     public static boolean isOnMineland() {
         ServerData data = mc.getCurrentServerData();
         return data != null && Arrays.stream(Configuration.MISC.MINELAND_IPS.split(","))

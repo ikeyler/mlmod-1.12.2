@@ -2,7 +2,6 @@ package ikeyler.mlmod.util;
 
 import ikeyler.mlmod.itemeditor.ItemEditor;
 import net.minecraft.init.Items;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagString;
@@ -21,7 +20,7 @@ public class ItemUtil {
         return head;
     }
     public static ItemStack getDynamicVar(boolean saved) {
-        ItemStack item = Item.getByNameOrId("magma_cream").getDefaultInstance();
+        ItemStack item = Items.MAGMA_CREAM.getDefaultInstance();
         if (saved) {
             NBTTagCompound display = item.getOrCreateSubCompound("display");
             display.setString("LocName", "save");

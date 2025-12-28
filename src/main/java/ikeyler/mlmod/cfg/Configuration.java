@@ -54,6 +54,9 @@ public class Configuration {
         @Config.LangKey("mlmod.config.option.excl_mark_to_chat")
         @Config.Comment("mlmod.config.option.excl_mark_to_chat.tooltip")
         public CHAT_MODE EXCL_MARK_TO_CHAT = CHAT_MODE.OFF;
+        @Config.LangKey("mlmod.config.option.messages_in_actionbar")
+        @Config.Comment("mlmod.config.option.messages_in_actionbar.tooltip")
+        public Bool MESSAGES_IN_ACTIONBAR = Bool.TRUE;
     }
 
     public static class GeneralMessages {
@@ -82,6 +85,9 @@ public class Configuration {
         public Bool STREAM = Bool.TRUE;
         @Config.LangKey("mlmod.config.option.new_ask")
         public Bool NEW_ASK = Bool.TRUE;
+        @Config.LangKey("mlmod.config.option.login_check")
+        @Config.Comment("mlmod.config.option.login_check.tooltip")
+        public Bool LOGIN_CHECK = Bool.TRUE;
     }
 
     public static class Creative {
@@ -128,6 +134,9 @@ public class Configuration {
         @Config.LangKey("mlmod.config.option.mineland_ips")
         @Config.Comment("mlmod.config.option.mineland_ips.tooltip")
         public String MINELAND_IPS = "mineland.net, play-ml.ru";
+        @Config.LangKey("mlmod.config.option.command_aliases")
+        @Config.Comment("mlmod.config.option.command_aliases.tooltip")
+        public String[] COMMAND_ALIASES = new String[]{"кк:креативкоины", "з:золото"};
     }
 
     public enum Bool {
