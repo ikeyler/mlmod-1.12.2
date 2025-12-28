@@ -49,7 +49,7 @@ public class Manager {
         if (message == null) return;
         if (!message.isActive() || (!Configuration.GENERAL.ADS.get() && Messages.AD_MESSAGES.contains(message))) {
             event.setCanceled(true);
-            mc.player.sendMessage(new TextComponentString("hide: "+message.getMatcher().pattern()));
+            //mc.player.sendMessage(new TextComponentString("hide: "+message.getMatcher().pattern()));
             return;
         }
         if (Configuration.GENERAL.MESSAGES_IN_ACTIONBAR.get() && abarMessages.contains(message)) {
