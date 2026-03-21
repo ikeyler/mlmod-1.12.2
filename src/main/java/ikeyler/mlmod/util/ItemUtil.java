@@ -1,6 +1,7 @@
 package ikeyler.mlmod.util;
 
 import ikeyler.mlmod.itemeditor.ItemEditor;
+import net.minecraft.client.Minecraft;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -12,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ItemUtil {
+    private static Minecraft mc = Minecraft.getMinecraft();
     public static ItemStack getPlayerHead(String playerName) {
         ItemStack head = new ItemStack(Items.SKULL, 1, 3);
         head.setTagCompound(new NBTTagCompound());
@@ -31,5 +33,9 @@ public class ItemUtil {
         }
         ItemEditor.addLore(item, "");
         return item;
+    }
+    public static void updateSlot(ItemStack item, int slot) {
+        mc.player.inventory.setInventorySlotContents(slot, item);
+        mc.playerController.sendSlotPacket(item, 36+slot);
     }
 }

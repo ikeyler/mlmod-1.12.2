@@ -1,6 +1,7 @@
 package ikeyler.mlmod.variables;
 
 import ikeyler.mlmod.Main;
+import ikeyler.mlmod.util.ModUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -35,7 +36,7 @@ public class VarCollector {
 
     public boolean removeVariable(Variable variable) {
         try {
-            List<String> lines = readAll();
+            List<String> lines = ModUtils.readAllLines(dataFile);
             boolean contains = lines.removeIf(line -> line.contains(
                     variable.getType().name() + VAR_SEPARATOR + variable.getName() + VAR_SEPARATOR + variable.getNbt()));
             if (contains) {
@@ -50,7 +51,7 @@ public class VarCollector {
     }
 
     public List<Variable> readVariables() {
-        return readAll().stream().map(Variable::fromString).filter(Objects::nonNull).collect(Collectors.toList());
+        return ModUtils.readAllLines(dataFile).stream().map(Variable::fromString).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private void writeLine(String data) {
@@ -60,18 +61,5 @@ public class VarCollector {
         } catch (IOException e) {
             Main.logger.error("error while writing file:", e);
         }
-    }
-    private List<String> readAll() {
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-        }
-        catch (Exception e) {
-            Main.logger.error("error while reading file:", e);
-        }
-        return lines;
     }
 }

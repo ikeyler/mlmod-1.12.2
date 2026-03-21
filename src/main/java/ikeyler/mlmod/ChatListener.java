@@ -1,49 +1,56 @@
 package ikeyler.mlmod;
 
 import ikeyler.mlmod.cfg.Configuration;
-import ikeyler.mlmod.itemeditor.ChatEditor;
-import ikeyler.mlmod.itemeditor.ItemEditor;
-import ikeyler.mlmod.messages.MessageType;
-import ikeyler.mlmod.util.ItemUtil;
+import ikeyler.mlmod.commands.Command;
+import ikeyler.mlmod.commands.CommandManager;
 import ikeyler.mlmod.util.ModUtils;
-import ikeyler.mlmod.util.SoundUtil;
-import ikeyler.mlmod.util.TextUtil;
-import ikeyler.mlmod.variables.Variable;
 import net.minecraft.client.Minecraft;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.config.Config;
-import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static ikeyler.mlmod.Main.*;
-import static ikeyler.mlmod.util.ModUtils.MOD_PREFIX;
-import static ikeyler.mlmod.util.ModUtils.VAR_SEPARATOR;
 
 public class ChatListener {
     private final Minecraft mc = Minecraft.getMinecraft();
+    private final CommandManager manager = new CommandManager();
     private final List<String> commands = new ArrayList<>(
-            Arrays.asList("/mlc", "/item", "/var", "/text", "/num", "/msgs", "/ignorelist", "/head", "/nightmode", "/vars", "/varsave"));
+            Arrays.asList("/mlc", "/item", "/var", "/text", "/num", "/msgs", "/ignorelist", "/head", "/nightmode", "/vars", "/varsave", "/rlmsg"));
+
+    private void processAlias(String cmd, ClientChatEvent event) {
+        String[] split = cmd.split(" ", 2);
+        String command = split[0].replaceFirst("/", "");
+        String args = split.length > 1 ? split[1] : "";
+        for (String alias : Configuration.MISC.COMMAND_ALIASES) {
+            alias = alias.trim();
+            String[] entry = alias.split(":", 2);
+            if (entry.length < 2) continue;
+            if (command.equalsIgnoreCase(entry[0]) && !command.equalsIgnoreCase(entry[1])) {
+                event.setCanceled(true);
+                String aliasCmd = (!entry[1].startsWith("/") ? "/" : "") + entry[1].toLowerCase();
+                String newCmd = aliasCmd + " " + args;
+                if (commands.contains(aliasCmd)) {
+                    MinecraftForge.EVENT_BUS.post(new ClientChatEvent(newCmd));
+                }
+                else {
+                    mc.player.sendChatMessage(newCmd);
+                    mc.ingameGUI.getChatGUI().addToSentMessages(cmd);
+                }
+                break;
+            }
+        }
+    }
 
     @SubscribeEvent
     public void onChatReceivedEvent(ClientChatReceivedEvent event) {
         if (Configuration.MISC.DETECT_MINELAND.get() && !ModUtils.isOnMineland())
             return;
-        messageManager.processMessages(messageManager.getMessage(event.getMessage().getUnformattedText()), event);
+        messageManager.processMessages(event.getMessage().getUnformattedText(), event);
     }
 
     @SubscribeEvent
@@ -52,25 +59,16 @@ public class ChatListener {
         String[] split = message.split(" ");
         String start = split.length > 0 ? split[0] : "";
 
-        if (message.startsWith("/") && Configuration.MISC.COMMAND_ALIASES.length > 0) {
-            String command = start.replaceFirst("/", "");
-            String args = message.split(" ", 2).length > 1 ? message.split(" ", 2)[1] : "";
-            if (command.isEmpty()) return;
-            for (String entry:Configuration.MISC.COMMAND_ALIASES) {
-                String[] spl = entry.split(":", 2);
-                if (spl.length < 2) continue;
-                if (command.equalsIgnoreCase(spl[0].trim())) {
-                    event.setCanceled(true);
-                    String cmd = spl[1].trim();
-                    String output = "/"+cmd+" "+args;
-                    if (commands.contains("/"+cmd.toLowerCase()))
-                        MinecraftForge.EVENT_BUS.post(new ClientChatEvent(output));
-                    else {
-                        mc.player.sendChatMessage(output);
-                        mc.ingameGUI.getChatGUI().addToSentMessages(message);
-                    }
-                    break;
-                }
+        if (message.startsWith("/")) {
+            if (Configuration.MISC.COMMAND_ALIASES.length > 0)
+                processAlias(message, event);
+            Command command;
+            if ((command = manager.getCommand(start.replaceFirst("/", ""))) != null) {
+                List<String> args = split.length > 1 ? Arrays.asList(split).subList(1, split.length) : new ArrayList<>();
+                command.execute(args);
+                event.setCanceled(true);
+                if (!command.isUtil())
+                    mc.ingameGUI.getChatGUI().addToSentMessages(message);
             }
         }
 
@@ -81,449 +79,7 @@ public class ChatListener {
             event.setCanceled(true);
             mc.ingameGUI.getChatGUI().addToSentMessages(message);
             String chatType = Configuration.GENERAL.EXCL_MARK_TO_CHAT == Configuration.CHAT_MODE.CC ? "/cc" : "/dc";
-            mc.player.sendChatMessage(chatType+" "+newMessage);
-            return;
-        }
-
-        if (commands.contains(start.toLowerCase())) {
-            event.setCanceled(true);
-            mc.ingameGUI.getChatGUI().addToSentMessages(message);
-        }
-
-        switch (start.toLowerCase()) {
-            case "/mlc":
-                new Timer().schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        mc.addScheduledTask(ModUtils::openConfigGui);
-                    }
-                }, 100);
-                break;
-
-            case "/mlmodplayerinteract":
-                event.setCanceled(true);
-                if (split.length < 2) return;
-                String[] msgSplit = message.replaceFirst("/mlmodplayerinteract ", "").split("§§");
-                String player = msgSplit[0];
-                String msg = msgSplit.length > 1 ? msgSplit[1] : null;
-                String chat = msgSplit.length > 2 ? msgSplit[2] : null;
-
-                TextComponentString playerComp = new TextComponentString("§7§o"+player);
-                playerComp.appendSibling(new TextComponentTranslation("mlmod.copy"));
-                playerComp.setStyle(TextUtil.clickToCopyStyle(player, "name", false));
-                TextComponentTranslation menu = new TextComponentTranslation("mlmod.messages.chat_player_interact", playerComp);
-
-                menu.appendText("\n");
-                if (msg != null && chat != null)
-                    menu.appendSibling(new TextComponentTranslation("mlmod.messages.reply").setStyle(
-                            TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, chat))
-                    )).appendText(" ");
-                if (msg != null)
-                    menu.appendSibling(new TextComponentTranslation("mlmod.messages.copy_message").setStyle(
-                            TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodcopytext "+msg))
-                                    .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentString(msg)))
-                    )).appendText(" ");
-
-                menu.appendSibling(new TextComponentTranslation("mlmod.messages.report").setStyle(
-                        TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/report " + player))
-                )).appendText(" ");
-                menu.appendSibling(new TextComponentTranslation("mlmod.messages.block").setStyle(
-                        TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlignore " + player))
-                )).appendText(" ");
-                menu.appendSibling(new TextComponentTranslation("mlmod.messages.find_messages").setStyle(
-                        TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/msgs find " + player + " "))
-                )).appendText(" ");
-                menu.appendSibling(new TextComponentTranslation("mlmod.messages.find_who").setStyle(
-                        TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/who " + player))
-                ));
-
-                mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(menu));
-                break;
-
-            case "/mlignore":
-                event.setCanceled(true);
-                if (split.length < 2) return;
-                String ignorePlayer = split[1].toLowerCase();
-                List<String> players = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
-                boolean containsPlayer = players.contains(ignorePlayer);
-                String ignoreAction = (containsPlayer ? "/ignore remove " : "/ignore add ") + ignorePlayer + " ";
-                String ignoreMessage = containsPlayer ? "mlmod.messages.ignore.player_removed" : "mlmod.messages.ignore.player_added";
-                Style ignoreStyle = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, ignoreAction));
-                if (!containsPlayer) players.add(ignorePlayer);
-                else players.remove(ignorePlayer);
-                mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation(ignoreMessage, ignorePlayer).setStyle(ignoreStyle)));
-                Configuration.GENERAL.IGNORED_PLAYERS = players.toArray(new String[0]);
-                ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
-                messageManager.updateIgnoredPlayers();
-                break;
-
-            case "/var":
-            case "/text":
-            case "/num":
-                if (!mc.player.isCreative()) {
-                    ModUtils.sendCreativeModeNeeded();
-                    return;
-                }
-                ItemStack item = null;
-                String[] spl = message.split(" ", 2);
-                String name = spl.length > 1 ? spl[1] : "";
-                String varDesc = null;
-                switch (start.toLowerCase()) {
-                    case "/var":
-                        item = ItemUtil.getDynamicVar(false);
-                        break;
-                    case "/text":
-                        item = Items.BOOK.getDefaultInstance();
-                        varDesc = "mlmod.var.text.desc";
-                        break;
-                    case "/num":
-                        item = Items.SLIME_BALL.getDefaultInstance();
-                        varDesc = "mlmod.var.number.desc";
-                        break;
-                }
-                if (item != null) {
-                    item.setStackDisplayName(TextUtil.replaceColorCodes(name));
-                    if (varDesc != null) {
-                        System.out.println(Arrays.toString(new TextComponentTranslation(varDesc).getFormattedText().split("\\\\n")));
-                        ItemEditor.setLore(item, Arrays.asList(new TextComponentTranslation(varDesc).getFormattedText().split("\\\\n")));
-                    }
-                    int slotId = mc.player.inventory.getFirstEmptyStack();
-                    mc.player.inventory.setInventorySlotContents(slotId, item);
-                    mc.playerController.sendSlotPacket(item, 36+slotId);
-                    mc.ingameGUI.setOverlayMessage(new TextComponentTranslation("mlmod.messages.var.var_given"), false);
-                }
-                break;
-
-            case "/msgs":
-                if (split.length == 1) {
-                    int totalMessages = messageCollector.readAll().size();
-                    Style fileStyle = TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, "mlmodData.txt"));
-                    TextComponentString component = new TextComponentString(MOD_PREFIX);
-                    component.appendSibling(new TextComponentTranslation("mlmod.messages.collector.total", totalMessages));
-                    component.appendText("\n");
-                    component.appendSibling(new TextComponentTranslation("mlmod.messages.collector.search_guide"));
-                    component.appendText("\n");
-                    component.appendSibling(new TextComponentTranslation("mlmod.messages.collector.info").setStyle(fileStyle));
-                    component.appendText("\n");
-                    String state = Configuration.GENERAL.MESSAGE_COLLECTOR.get()
-                            ? "mlmod.messages.collector.state_enabled" : "mlmod.messages.collector.state_disabled";
-                    component.appendSibling(new TextComponentTranslation(state).setStyle(
-                            TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodtogglemsgcollector"))));
-                    mc.player.sendMessage(component);
-                    return;
-                }
-                if (split.length > 2 && split[1].equalsIgnoreCase("find")) {
-                    String query = message.toLowerCase().replaceFirst("/msgs find ", "");
-                    MessageType type = Arrays.stream(MessageType.values())
-                            .filter(t -> t.getName().equalsIgnoreCase(split[split.length - 1]))
-                            .findFirst()
-                            .orElse(null);
-                    if (type != null)
-                        query = query.split(" ").length == 1 ? null : query.substring(0, query.lastIndexOf(" ")).trim();
-                    messageCollector.findAsync(query, type, 50, "mc");
-                }
-                break;
-
-            case "/ignorelist":
-                List<String> ignoredPlayers = Arrays.asList(Configuration.GENERAL.IGNORED_PLAYERS);
-                ITextComponent ignoreComponent = new TextComponentString(MOD_PREFIX);
-                ignoreComponent.appendSibling(new TextComponentTranslation("mlmod.messages.ignorelist.ignore_list", ignoredPlayers.size()));
-                ignoreComponent.appendText("\n");
-                for (String pl:ignoredPlayers) {
-                    ignoreComponent.appendText("§8- §7").appendSibling(new TextComponentString(pl)
-                            .setStyle(TextUtil.newStyle()
-                                    .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlignore "+pl))
-                                    .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.ignorelist.click_to_remove")))));
-                    ignoreComponent.appendText("\n");
-                }
-                ignoreComponent.appendSibling(new TextComponentTranslation("mlmod.messages.ignorelist.info")
-                        .setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/mlignore "))));
-                mc.player.sendMessage(ignoreComponent);
-                break;
-
-            case "/sound":
-                if (!Configuration.CREATIVE.SOUND_COMMAND.get()) return;
-
-                event.setCanceled(true);
-                mc.ingameGUI.getChatGUI().addToSentMessages(message);
-                if (split.length == 1) {
-                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).
-                            appendSibling(new TextComponentTranslation("mlmod.messages.sound.usage")).setStyle(
-                                    TextUtil.newStyle().setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.sound.usage_info")))
-                            )
-                            .appendText("\n").appendSibling(new TextComponentTranslation("mlmod.messages.sound.search_guide"))
-                    );
-                    return;
-                }
-                else if (split.length > 1 && !split[1].equalsIgnoreCase("find")) {
-                    String sound = split[1].toLowerCase();
-                    if (!SoundUtil.getSoundIds().contains(sound)) {
-                        mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.sound.sounds_not_found"));
-                        return;
-                    }
-                    float pitch = 1;
-                    float volume = 1;
-                    try {
-                        pitch = split.length > 2 ? Float.parseFloat(split[2]) : pitch;
-                        volume = split.length > 3 ? Float.parseFloat(split[3]) : volume;
-                    } catch (Exception ignore) {ModUtils.sendIncorrectArguments(); return;}
-                    mc.getSoundHandler().stopSounds();
-                    mc.ingameGUI.setOverlayMessage(new TextComponentTranslation("mlmod.messages.sound.playing_sound", sound), true);
-                    SoundUtil.playSound(sound, volume, pitch);
-                    return;
-                }
-
-                String query = message.toLowerCase().replaceFirst("/sound find ", "");
-                List<String> sounds = SoundUtil.findSoundIds(query);
-                if (sounds.isEmpty()) {mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.sound.sounds_not_found")); return;}
-                ITextComponent soundComponent = new TextComponentString(MOD_PREFIX).appendSibling(
-                        new TextComponentTranslation("mlmod.messages.sound.sounds_found", sounds.size()));
-                soundComponent.appendText("\n");
-                boolean switchSoundColor = false;
-                for (int i = 0; i < sounds.size(); i++) {
-                    String sound = sounds.get(i);
-                    String color = switchSoundColor ? "§f" : "§7";
-                    soundComponent.appendSibling(new TextComponentString(color+sound)
-                            .setStyle(TextUtil.newStyle()
-                                    .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/sound "+sound))
-                                    .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.sound.click_to_play_sound")))));
-                    if (i < sounds.size()-1) {soundComponent.appendText(", ");}
-                    switchSoundColor = !switchSoundColor;
-                }
-                mc.player.sendMessage(soundComponent);
-                break;
-
-            case "/head":
-                if (split.length == 1) {
-                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation("mlmod.messages.head.usage")));
-                    return;
-                }
-                if (!mc.player.isCreative()) {
-                    ModUtils.sendCreativeModeNeeded();
-                    return;
-                }
-                try {
-                    String headName = split[1].toLowerCase();
-                    int slotId = mc.player.inventory.getFirstEmptyStack();
-                    ItemStack head = ItemUtil.getPlayerHead(headName);
-                    mc.player.inventory.setInventorySlotContents(slotId, head);
-                    mc.playerController.sendSlotPacket(head, 36+slotId);
-                    mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation("mlmod.messages.head.head_given", "§7"+headName)));
-                } catch (Exception e) {ModUtils.sendCommandError(); logger.error(e);}
-                break;
-
-            case "/nightmode":
-                ModUtils.nightModeCommand();
-                break;
-
-            case "/item":
-                if (split.length == 1) {
-                    new ChatEditor(mc.player.getHeldItemMainhand()).printChatEditor();
-                    return;
-                }
-                List<String> actionList = new ArrayList<>(
-                        Arrays.asList(
-                                "name", "addlore", "removelore", "editlore", "enchant", "unenchant", "nbt", "enchlist", "break", "unbreak",
-                                "dur", "durability"
-                        ));
-                String action = split[1].toLowerCase();
-                if (!actionList.contains(action)) {
-                    ModUtils.sendIncorrectArguments();
-                    return;
-                }
-                ItemStack itemStack = mc.player.getHeldItemMainhand();
-                String arg = message.indexOf(" ", 6) != -1 ? message.substring(message.indexOf(" ", 6)).trim() : "";
-                String[] args = arg.split(" ");
-                switch (action) {
-                    case "name":
-                        String oldName = itemStack.getDisplayName();
-                        ItemEditor.renameItem(itemStack, TextUtil.replaceColorCodes(arg));
-                        mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(new TextComponentTranslation("mlmod.messages.itemeditor.old_name", oldName)
-                                .setStyle(TextUtil.clickToViewStyle(oldName.replace("§", "&")))));
-                        break;
-                    case "addlore":
-                        ItemEditor.addLore(itemStack, TextUtil.replaceColorCodes(arg));
-                        break;
-                    case "editlore":
-                        try {
-                            int loreIndex = Integer.parseInt(args[0]);
-                            ItemEditor.editLore(itemStack, loreIndex, TextUtil.replaceColorCodes(arg.substring(arg.indexOf(" ")+1)));
-                        } catch (Exception ignore) {
-                            ModUtils.sendIncorrectArguments();
-                            return;
-                        }
-                        break;
-                    case "removelore":
-                        if (arg.isEmpty()) {
-                            ItemEditor.clearLore(itemStack);
-                        }
-                        else {
-                            try {
-                                int loreIndex = Integer.parseInt(args[0]);
-                                ItemEditor.removeLore(itemStack, loreIndex);
-                            } catch (Exception ignore) {
-                                ModUtils.sendCommandError();
-                                return;
-                            }
-                        }
-                        break;
-                    case "nbt":
-                        String nbt = itemStack.hasTagCompound() ? itemStack.getTagCompound().toString() : "{}";
-                        mc.player.sendMessage(new TextComponentString(MOD_PREFIX+nbt).setStyle(TextUtil.clickToCopyStyle(nbt, "text", false)));
-                        return;
-                    case "enchlist":
-                        List<String> enchantments = Enchantment.REGISTRY.getKeys().stream().map(ResourceLocation::getResourcePath).collect(Collectors.toList());
-                        ITextComponent enchComp = new TextComponentString(MOD_PREFIX);
-                        boolean switchEnchColor = false;
-                        for (int i = 0; i < enchantments.size(); i++) {
-                            String ench = enchantments.get(i);
-                            String color = switchEnchColor ? "§f" : "§7";
-                            enchComp.appendSibling(new TextComponentString(color+ench+" ("+Enchantment.getEnchantmentByLocation(ench).getTranslatedName(1)+color+")")
-                                    .setStyle(TextUtil.newStyle()
-                                            .setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/item enchant "+ench+" "))
-                                            .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.itemeditor.click_to_enchant")))));
-                            if (i < enchantments.size()-1) {enchComp.appendText(", ");}
-                            switchEnchColor = !switchEnchColor;
-                        }
-                        mc.player.sendMessage(enchComp);
-                        return;
-                    case "enchant":
-                        try {
-                            Enchantment ench = Enchantment.getEnchantmentByLocation(args[0].toLowerCase());
-                            int level = Integer.parseInt(args[1]);
-                            ItemEditor.addEnchantment(itemStack, ench, level);
-                        } catch (Exception ignore) {
-                            ModUtils.sendIncorrectArguments();
-                            return;
-                        }
-                        break;
-                    case "unenchant":
-                        if (arg.isEmpty()) {
-                            ItemEditor.removeEnchantment(itemStack, null);
-                        }
-                        else {
-                            try {
-                                Enchantment ench = Enchantment.getEnchantmentByLocation(args[0].toLowerCase());
-                                if (ench == null) {
-                                    mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.itemeditor.no_ench_on_item"));
-                                    return;
-                                }
-                                ItemEditor.removeEnchantment(itemStack, ench);
-                            } catch (Exception ignore) {
-                                ModUtils.sendCommandError();
-                                return;
-                            }
-                        }
-                        break;
-                    case "break":
-                    case "unbreak":
-                        ItemEditor.setUnbreakable(itemStack, !ItemEditor.isUnbreakable(itemStack));
-                        break;
-                    case "dur":
-                    case "durability":
-                        try {
-                            itemStack.setItemDamage(Integer.parseInt(args[0]));
-                        } catch (Exception ignore) {
-                            ModUtils.sendIncorrectArguments();
-                            return;
-                        }
-                        break;
-                }
-                ModUtils.sendBarSuccess();
-                mc.playerController.sendSlotPacket(itemStack, 36+mc.player.inventory.currentItem);
-                break;
-
-            case "/vars":
-                List<Variable> vars = varCollector.readVariables();
-                ITextComponent varComponent = new TextComponentString(MOD_PREFIX);
-                varComponent.appendSibling(new TextComponentTranslation("mlmod.messages.vars.var_list", vars.size()));
-                varComponent.appendText("\n");
-                for (Variable variable:vars) {
-                    String stringVar = variable.getType()+VAR_SEPARATOR+variable.getName()+VAR_SEPARATOR+variable.getNbt();
-                    varComponent.appendSibling(new TextComponentString("§c- §7")
-                            .setStyle(TextUtil.newStyle()
-                                    .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodremovevar "+stringVar))
-                                    .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.vars.click_to_remove")))))
-                            .appendSibling(new TextComponentTranslation("mlmod.var."+variable.getType().name().toLowerCase())
-                                    .appendText("§7: "+variable.getFixedName())
-                            .setStyle(TextUtil.newStyle()
-                                    .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodgetvar "+stringVar))
-                                    .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.vars.click_to_get")))));
-                    varComponent.appendText("\n");
-                }
-                varComponent.appendSibling(new TextComponentTranslation("mlmod.messages.vars.info")
-                        .setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/varsave"))));
-                mc.player.sendMessage(varComponent);
-                break;
-
-            case "/varsave":
-                Variable variable = Variable.fromItem(mc.player.getHeldItemMainhand());
-                if (variable == null) {
-                    mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.vars.var_not_saved"));
-                    return;
-                }
-                varCollector.addVariable(variable);
-                mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.vars.var_saved", variable.getType().name()));
-                break;
-
-            case "/mlmodremovevar":
-                event.setCanceled(true);
-                Variable parsedVar = Variable.fromString(message.replaceFirst("/mlmodremovevar ", ""));
-                if (parsedVar != null && varCollector.removeVariable(parsedVar)) {
-                    mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.vars.var_removed", parsedVar.getName()));
-                    return;
-                }
-                mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.vars.var_not_removed"));
-                break;
-
-            case "/mlmodgetvar":
-                event.setCanceled(true);
-                if (!mc.player.isCreative()) {
-                    ModUtils.sendCreativeModeNeeded();
-                    return;
-                }
-                Variable parsedVar2 = Variable.fromString(message.replaceFirst("/mlmodgetvar ", ""));
-                ItemStack itemVar;
-                if (parsedVar2 != null && (itemVar = Variable.itemFromVariable(parsedVar2)) != null) {
-                    int slotId = mc.player.inventory.getFirstEmptyStack();
-                    // who else would think that u should use
-                    // setInventorySlotContents instead of addItemStackToInventory?
-                    mc.player.inventory.setInventorySlotContents(slotId, itemVar);
-                    mc.playerController.sendSlotPacket(itemVar, 36+slotId);
-                }
-                break;
-
-            case "/mlmodtogglemsgcollector":
-                event.setCanceled(true);
-                Configuration.GENERAL.MESSAGE_COLLECTOR = Configuration.Bool.fromBoolean(!Configuration.GENERAL.MESSAGE_COLLECTOR.get());
-                ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
-                ModUtils.sendSuccess();
-                break;
-            case "/mlmodshowmessageads":
-                event.setCanceled(true);
-                if (split.length < 2) return;
-                TextComponentString adsComponent = new TextComponentString(MOD_PREFIX);
-                adsComponent.appendSibling(new TextComponentTranslation("mlmod.messages.world_list"));
-                adsComponent.appendText("\n");
-                for (String adCmd:message.replaceFirst("/mlmodshowmessageads ", "").split(",")) {
-                    TextComponentString ad = new TextComponentString("§8- §7"+adCmd);
-                    ad.setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, adCmd))
-                            .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentTranslation("mlmod.messages.world_list.join"))));
-                    ad.appendSibling(new TextComponentTranslation("mlmod.copy").setStyle(TextUtil.clickToCopyStyle(adCmd, "id", false)));
-                    ad.appendText("\n");
-                    adsComponent.appendSibling(ad);
-                }
-                mc.player.sendMessage(adsComponent);
-                break;
-            case "/mlmodcopytext":
-                event.setCanceled(true);
-                if (split.length < 2) return;
-                String text = message.replaceFirst("/mlmodcopytext ", "");
-                TextUtil.copyToClipboard(text);
-                mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.text_copied", text));
-                break;
-            default:
-                break;
+            mc.player.sendChatMessage(chatType + " " + newMessage);
         }
     }
 }

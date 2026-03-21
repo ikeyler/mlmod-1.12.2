@@ -2,16 +2,15 @@ package ikeyler.mlmod.messages;
 
 import ikeyler.mlmod.Main;
 import ikeyler.mlmod.cfg.Configuration;
+import ikeyler.mlmod.util.ModUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.FileReader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -22,13 +21,14 @@ import java.util.stream.Collectors;
 import static ikeyler.mlmod.util.ModUtils.MOD_PREFIX;
 
 public class MessageCollector {
-    private final File dataFile = new File("mlmodData.txt");
+    public final File dataFile = new File("mlmodData.txt");
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private List<String> data = new ArrayList<>();
 
     public MessageCollector() {
         try {
-            if (dataFile.createNewFile()) Main.logger.info("created msgcollector data file: {}", dataFile.getName());
+            if (dataFile.createNewFile())
+                Main.logger.info("created msgcollector data file: {}", dataFile.getName());
         }
         catch (IOException e) {
             Main.logger.error("could not create msgcollector data file:", e);
@@ -36,7 +36,10 @@ public class MessageCollector {
     }
     public void addEntry(MessageType type, String player, String data) {
         if (!Configuration.GENERAL.MESSAGE_COLLECTOR.get()) return;
-        if (!dataFile.exists()) {Main.logger.error("data file doesn't exist"); return;}
+        if (!dataFile.exists()) {
+            Main.logger.error("data file doesn't exist");
+            return;
+        }
         // timestamp type | player (optional): data
         String timestamp = LocalDateTime.now().format(formatter);
         StringBuilder entry = new StringBuilder();
@@ -55,40 +58,27 @@ public class MessageCollector {
             Main.logger.error("error while writing file:", e);
         }
     }
-    public List<String> readAll() {
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-        }
-        catch (Exception e) {
-            Main.logger.error("error while reading file:", e);
-        }
-        return lines;
-    }
-    public void findAsync(String query, MessageType type, int limit, String source) {
+    public void findAsync(String query, MessageType type, int limit) {
         CompletableFuture.supplyAsync(() -> {
-            List<String> lines = readAll();
+            List<String> lines = ModUtils.readAllLines(dataFile);
             if (type != null) lines = lines.stream().filter(l -> l.split(" ")[2].equalsIgnoreCase(type.getName())).collect(Collectors.toList());
             if (query != null) lines = lines.stream().filter(l -> l.split("\\|", 2)[1].toLowerCase().contains(query.toLowerCase())).collect(Collectors.toList());
             if (limit > 0 && lines.size() >= limit) lines = lines.subList(lines.size()-limit, lines.size());
             return lines;
-        }).thenAcceptAsync(res -> {data = res; searchCompleted(source);});
+        }).thenAcceptAsync(res -> {data = res; searchCompleted();});
     }
-    private void searchCompleted(String source) {
-        if (source.equalsIgnoreCase("mc")) {
-            Minecraft mc = Minecraft.getMinecraft();
-            if (!data.isEmpty()) {
-                TextComponentString component = new TextComponentString("");
-                component.appendText((MOD_PREFIX)).appendSibling(new TextComponentTranslation("mlmod.messages.collector.search_found", data.size()));
-                component.appendText("\n");
-                data.stream().map(s -> {String[] parts = s.split("\\|", 2); return "§7- §7" + parts[0] + "§f" + parts[1] + "\n";}).forEach(component::appendText);
-                mc.player.sendMessage(component);
-                return;
-            }
-            mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.collector.search_not_found"));
+    private void searchCompleted() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (!data.isEmpty()) {
+            TextComponentString component = new TextComponentString("");
+            component.appendText((MOD_PREFIX)).appendSibling(new TextComponentTranslation("mlmod.messages.collector.search_found", data.size()));
+            component.appendText("\n");
+            data.stream()
+                    .map(s -> {String[] parts = s.split("\\|", 2); return "§7- §7" + parts[0] + "§f" + parts[1] + "\n";})
+                    .forEach(component::appendText);
+            mc.player.sendMessage(component);
+            return;
         }
+        mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.collector.search_not_found"));
     }
 }

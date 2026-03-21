@@ -26,15 +26,11 @@ public class Main
         MinecraftForge.EVENT_BUS.register(new PacketHandler());
         MinecraftForge.EVENT_BUS.register(new ChatListener());
         MinecraftForge.EVENT_BUS.register(new Keybinds());
-        messageManager.addMessages(Messages.MESSAGES);
-        messageManager.addMessages(Messages.AD_MESSAGES);
+        MinecraftForge.EVENT_BUS.register(new TitleListener());
         Keybinds.register();
     }
     @EventHandler
     public static void onLoadComplete(FMLLoadCompleteEvent event) {
-        messageManager.addMessages(Messages.MESSAGES);
-        messageManager.addMessages(Messages.AD_MESSAGES);
-        messageManager.update();
-        Messages.updateMessages();
+        Messages.reloadMessages();
     }
 }

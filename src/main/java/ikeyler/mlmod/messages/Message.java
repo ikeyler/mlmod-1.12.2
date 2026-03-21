@@ -6,12 +6,23 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Message {
-    private final Pattern[] patterns;
+    public final Pattern[] patterns;
     private boolean active;
     private Matcher matcher;
     public Message(String... patterns) {
         this.patterns = Arrays.stream(patterns).map(Pattern::compile).toArray(Pattern[]::new);
         this.active = true;
+    }
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Message message = (Message) object;
+        return Arrays.equals(this.patterns, message.patterns);
+    }
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(this.patterns);
     }
     public Matcher getMatcher() {
         return this.matcher;

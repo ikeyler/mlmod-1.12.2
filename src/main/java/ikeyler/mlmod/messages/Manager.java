@@ -12,47 +12,39 @@ import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ikeyler.mlmod.Main.messageCollector;
+import static ikeyler.mlmod.messages.Messages.messagesMap;
 
 public class Manager {
-    private final List<Message> messageList = new ArrayList<>();
     private final Minecraft mc = Minecraft.getMinecraft();
     private final Pattern adPattern = Pattern.compile("/?\\b(ad|ад|id|айди|join)\\s+(\\S+)");
-    private String you;
     private final List<String> translatePrefix = Arrays.asList("[Перевести]", "[Translate]");
     private List<String> ignoredPlayers;
-    private final List<Message> abarMessages = Arrays.asList(Messages.WORLD_MODE_CHANGE, Messages.LOGIN_CHECK);
+    private List<Message> actionbarMessages;
+    private List<Message> adMessages;
 
-    public void addMessages(List<Message> messages) {
-        messageList.addAll(messages);
-    }
+    public Manager() {}
+
     public void update() {
-        you = new TextComponentTranslation("mlmod.you").getUnformattedText();
-        updateIgnoredPlayers();
-    }
-    public void updateIgnoredPlayers() {
+        actionbarMessages = messagesMap.getOrDefault("ABAR", new ArrayList<>());
+        adMessages = messagesMap.getOrDefault("AD", new ArrayList<>());
         ignoredPlayers = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
     }
-    public Message getMessage(String message) {
-        return messageList.stream()
-                .filter(msg -> msg.matches(message)).findFirst().orElse(null);
-    }
 
-    public void processMessages(Message message, ClientChatReceivedEvent event) {
+    public void processMessages(String chatMessage, ClientChatReceivedEvent event) {
+        Message message = Messages.getMessage(chatMessage);
         if (message == null) return;
-        if (!message.isActive() || (!Configuration.GENERAL.ADS.get() && Messages.AD_MESSAGES.contains(message))) {
+        if (!message.isActive() || Messages.contains("HIDE", message) || (!Configuration.GENERAL.ADS.get() && adMessages.contains(message))) {
             event.setCanceled(true);
             //mc.player.sendMessage(new TextComponentString("hide: "+message.getMatcher().pattern()));
             return;
         }
-        if (Configuration.GENERAL.MESSAGES_IN_ACTIONBAR.get() && abarMessages.contains(message)) {
+        if (Configuration.GENERAL.MESSAGES_IN_ACTIONBAR.get() && actionbarMessages.contains(message)) {
             event.setCanceled(true);
             mc.ingameGUI.setOverlayMessage(event.getMessage(), false);
             return;
@@ -61,14 +53,16 @@ public class Manager {
         ITextComponent messageComponent = event.getMessage();
         Matcher matcher = message.getMatcher();
 
-        if (message == Messages.DEV_MODE_JOIN) {
+        if (Messages.contains("DEV_MODE_JOIN", message)) {
             if (!Configuration.CREATIVE.DEV_MODE_JOIN.get()) event.setCanceled(true);
             ModUtils.enableNightDevMode();
             return;
         }
 
-        if (message == Messages.UNANSWERED_ASKS || message == Messages.UNREAD_MAIL) {
-            String cmd = message == Messages.UNANSWERED_ASKS ? "/q" : "/mailgui";
+        boolean isUnsAsk = Messages.contains("UNANSWERED_ASKS", message);
+        boolean isUnreadMail = Messages.contains("UNREAD_MAIL", message);
+        if (isUnsAsk || isUnreadMail) {
+            String cmd = isUnsAsk ? "/q" : "/mailgui";
             TextComponentTranslation component = new TextComponentTranslation("mlmod.messages.open_component");
             component.setStyle(component.getStyle()
                     .setClickEvent(new ClickEvent(
@@ -82,29 +76,28 @@ public class Manager {
         /*
         creative & donate chat handling
         */
-        if (message == Messages.CREATIVE_CHAT || message == Messages.DONATE_CHAT) {
-            boolean hideMessage = false;
+        boolean isCreativeChat = Messages.contains("CREATIVE_CHAT", message);
+        boolean isDonateChat = Messages.contains("DONATE_CHAT", message);
+        if (isCreativeChat || isDonateChat) {
             boolean setMessage = false;
             String[] split = matcher.group(2).split(" ");
             String player = split[split.length-1];
             String msg = trimMessage(matcher.group(3));
-            String reply = message == Messages.CREATIVE_CHAT ? "/cc "+player+", " : "/dc "+player+", ";
-            MessageType type = message == Messages.CREATIVE_CHAT ? MessageType.CREATIVE_CHAT : MessageType.DONATE_CHAT;
-            if (isPlayerIgnored(player)) {
-                event.setCanceled(true); player = player+" (blocked)"; hideMessage=true;
-            }
+            String reply = isCreativeChat ? "/cc "+player+", " : "/dc "+player+", ";
+            MessageType type = isCreativeChat ? MessageType.CREATIVE_CHAT : MessageType.DONATE_CHAT;
             messageCollector.addEntry(type, player, msg);
-            if (hideMessage) return;
-
+            if (isPlayerIgnored(player)) {
+                event.setCanceled(true);
+                return;
+            }
             List<ITextComponent> siblingList = messageComponent.getSiblings();
             if (Configuration.GENERAL.HIDE_TRANSLATE.get() && translatePrefix.contains(siblingList.get(siblingList.size()-1).getUnformattedText())) {
                 messageComponent = new TextComponentString("");
                 siblingList.subList(0, siblingList.size()-1).forEach(messageComponent::appendSibling);
                 setMessage = true;
             }
-
             if (isChatFormattingEnabled() && messageComponent.getSiblings().size() > 2) {
-                String formatting = message == Messages.CREATIVE_CHAT ? Configuration.CHAT_FORMATTING.CREATIVE_CHAT : Configuration.CHAT_FORMATTING.DONATE_CHAT;
+                String formatting = isCreativeChat ? Configuration.CHAT_FORMATTING.CREATIVE_CHAT : Configuration.CHAT_FORMATTING.DONATE_CHAT;
                 if (formatting != null && !formatting.isEmpty()) {
                     ITextComponent formattedComponent = new TextComponentString("");
                     formattedComponent.appendText(TextUtil.replaceColorCodes(formatting) + " ");
@@ -115,7 +108,6 @@ public class Manager {
                     messageComponent = formattedComponent;
                 }
             }
-
             if (Configuration.GENERAL.CHAT_PLAYER_INTERACT.get()) {
                 String sep = "§§";
                 ITextComponent component = messageComponent.createCopy();
@@ -125,12 +117,12 @@ public class Manager {
                 component.setStyle(style);
                 if (Configuration.CREATIVE.SHOW_MESSAGE_ADS.get()) {
                     Matcher adMatcher = adPattern.matcher(msg.toLowerCase());
-                    List<String> adList = new ArrayList<>();
+                    Set<String> adList = new HashSet<>();
                     while (adMatcher.find()) {
                         String[] spl = adMatcher.group(0).split(" ");
                         String adId = spl[spl.length - 1].replace(",", "");
-                        if (!adList.contains(adId) && adId.length()>2)
-                            adList.add("/ad " + adId.replace(",", ""));
+                        if (adId.length() > 2)
+                            adList.add("/ad " + adId);
                     }
                     if (!adList.isEmpty()) {
                         Style adStyle = TextUtil.newStyle().
@@ -148,25 +140,25 @@ public class Manager {
             return;
         }
 
-        if (message == Messages.PM || message == Messages.PM_REPLY) {
-            boolean hideMessage = false;
-            String player = message == Messages.PM ? matcher.group(1) : you;
+        boolean isPM = Messages.contains("PM", message);
+        boolean isPMReply = Messages.contains("PM_REPLY", message);
+        if (isPM || isPMReply) {
+            String player = matcher.group(1);
             String msg = trimMessage(matcher.group(3));
-            MessageType type = message == Messages.PM ? MessageType.PRIVATE_MESSAGE : MessageType.PM_REPLY;
-            String data = message == Messages.PM ? msg : matcher.group(1)+" -> "+msg;
-            if (isPlayerIgnored(player)) {
-                event.setCanceled(true); player = player+" (blocked)"; hideMessage=true;
-            }
+            MessageType type = isPM ? MessageType.PRIVATE_MESSAGE : MessageType.PM_REPLY;
+            String data = isPM ? msg : matcher.group(1)+" -> "+msg;
             messageCollector.addEntry(type, player, data);
-
-            if (hideMessage) return;
+            if (isPlayerIgnored(player)) {
+                event.setCanceled(true);
+                return;
+            }
             if (Configuration.GENERAL.PM_NOTIFICATION.get() && !mc.inGameHasFocus) {
                 SoundUtil.playSound(ModUtils.NOTIFICATION_SOUND, 0.5F, 0.7F);
             }
             return;
         }
 
-        if (message == Messages.PARTY_CHAT) {
+        if (Messages.contains("PARTY_CHAT", message)) {
             String[] split = matcher.group(1).split(" ");
             String player = split[split.length-1];
             String msg = trimMessage(matcher.group(2));
@@ -174,7 +166,7 @@ public class Manager {
             return;
         }
 
-        if (message == Messages.WORLD_INVITE) {
+        if (Messages.contains("WORLD_INVITE", message)) {
             List<String> ignoredWorlds = Arrays.asList(Configuration.CREATIVE.IGNORED_WORLDS);
             if (!Configuration.CREATIVE.SHOW_WORLD_ID.get() && ignoredWorlds.isEmpty()) return;
             try {
@@ -208,8 +200,7 @@ public class Manager {
                 .orElse(msg);
     }
     private boolean isPlayerIgnored(String player) {
-        return ignoredPlayers.contains(player.toLowerCase()) &&
-                !player.equalsIgnoreCase(you);
+        return ignoredPlayers.contains(player.toLowerCase());
     }
     private boolean isChatFormattingEnabled() {
         return Configuration.CHAT_FORMATTING.CHAT_FORMATTING.get() &&

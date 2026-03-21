@@ -5,8 +5,7 @@ import ikeyler.mlmod.util.ModUtils;
 import ikeyler.mlmod.util.SoundUtil;
 import ikeyler.mlmod.util.TextUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.init.Items;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -18,7 +17,7 @@ public class EventListener {
     @SubscribeEvent
     public void onRightClick(PlayerInteractEvent.RightClickItem event) {
         if (Configuration.CREATIVE.PLAY_SOUND.get() && event.getEntityPlayer().getName().equals(mc.player.getName())) {
-            if (mc.player.isSneaking() && event.getItemStack().isItemEqual(new ItemStack(Item.getItemById(340)))) {
+            if (mc.player.isSneaking() && event.getItemStack().isItemEqual(Items.BOOK.getDefaultInstance())) {
                 SoundUtil.playSound(TextUtil.removeColors(event.getItemStack().getDisplayName()).trim(), 1, 1);
             }
         }

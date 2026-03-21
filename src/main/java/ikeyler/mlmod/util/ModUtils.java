@@ -1,5 +1,6 @@
 package ikeyler.mlmod.util;
 
+import ikeyler.mlmod.Main;
 import ikeyler.mlmod.Reference;
 import ikeyler.mlmod.cfg.Configuration;
 import net.minecraft.client.Minecraft;
@@ -7,9 +8,13 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.fml.client.config.GuiConfig;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ModUtils {
@@ -21,6 +26,15 @@ public class ModUtils {
     public static LocalDateTime LATEST_WORLD_JOIN = LocalDateTime.now();
     public static final String VAR_SEPARATOR = "::";
 
+    public static List<String> readAllLines(File file) {
+        try {
+            return Files.readAllLines(file.toPath());
+        }
+        catch (IOException e) {
+            Main.logger.error("error while reading {}", file.getName(), e);
+            return Collections.emptyList();
+        }
+    }
     public static void openConfigGui() {
         mc.displayGuiScreen(new GuiConfig(mc.currentScreen, Reference.MOD_ID, new TextComponentTranslation("mlmod.config").getFormattedText()));
     }
