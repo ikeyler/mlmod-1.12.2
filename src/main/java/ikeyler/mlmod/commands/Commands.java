@@ -118,6 +118,7 @@ public class Commands {
                 style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, translate("mlmod.messages.ignorelist.click_to_remove")));
                 ITextComponent playerComp = new TextComponentString(player).setStyle(style);
                 ignoreComponent.appendSibling(playerComp);
+                ignoreComponent.appendText("\n");
             }
             ignoreComponent.appendSibling(translate("mlmod.messages.ignorelist.info")
                     .setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/mlignore "))));
@@ -138,8 +139,8 @@ public class Commands {
                 sendPrefixMessage(usage);
                 return;
             }
-            else if (!args.get(1).equalsIgnoreCase("find")) {
-                String sound = args.get(1).toLowerCase();
+            else if (!args.get(0).equalsIgnoreCase("find")) {
+                String sound = args.get(0).toLowerCase();
                 if (!SoundUtil.getSoundIds().contains(sound)) {
                     sendPrefixMessage(translate("mlmod.messages.sound.sounds_not_found"));
                     return;
@@ -157,7 +158,7 @@ public class Commands {
                 SoundUtil.playSound(sound, volume, pitch);
                 return;
             }
-            String query = String.join(" ", args.subList(0, 1));
+            String query = String.join(" ", args.subList(1, args.size()));
             List<String> sounds = SoundUtil.findSoundIds(query);
             if (sounds.isEmpty()) {
                 sendPrefixMessage(translate("mlmod.messages.sound.sounds_not_found")); return;
