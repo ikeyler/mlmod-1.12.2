@@ -53,11 +53,10 @@ public class Commands {
         return new TextComponentTranslation(translation, args);
     }
 
-    public static class ConfigCommand implements Command {
-        @Override
-        public String getName() { return "mlc"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class ConfigCommand extends Command {
+        public ConfigCommand() {
+            super("mlc", false);
+        }
         @Override
         public void execute(List<String> args) {
             new Timer().schedule(new TimerTask() {
@@ -68,11 +67,10 @@ public class Commands {
             }, 100);
         }
     }
-    public static class MessagesCommand implements Command {
-        @Override
-        public String getName() { return "msgs"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class MessagesCommand extends Command {
+        public MessagesCommand() {
+            super("msgs", false);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) {
@@ -101,11 +99,10 @@ public class Commands {
             else ModUtils.sendIncorrectArguments();
         }
     }
-    public static class IgnoreListCommand implements Command {
-        @Override
-        public String getName() { return "ignorelist"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class IgnoreListCommand extends Command {
+        public IgnoreListCommand() {
+            super("ignorelist", false);
+        }
         @Override
         public void execute(List<String> args) {
             List<String> ignoredPlayers = Arrays.asList(Configuration.GENERAL.IGNORED_PLAYERS);
@@ -125,11 +122,10 @@ public class Commands {
             sendPrefixMessage(ignoreComponent);
         }
     }
-    public static class SoundCommand implements Command {
-        @Override
-        public String getName() { return "sound"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class SoundCommand extends Command {
+        public SoundCommand() {
+            super("sound", false);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) {
@@ -179,11 +175,10 @@ public class Commands {
             sendPrefixMessage(soundComponent);
         }
     }
-    public static class IgnoreCommand implements Command {
-        @Override
-        public String getName() { return "mlignore"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class IgnoreCommand extends Command {
+        public IgnoreCommand() {
+            super("mlignore", false);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) {
@@ -204,11 +199,10 @@ public class Commands {
             sendPrefixMessage(translate(ignoreMessage, player).setStyle(ignoreStyle));
         }
     }
-    public static class HeadCommand implements Command {
-        @Override
-        public String getName() { return "head"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class HeadCommand extends Command {
+        public HeadCommand() {
+            super("head", false);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) {
@@ -231,24 +225,22 @@ public class Commands {
             }
         }
     }
-    public static class NightModeCommand implements Command {
-        @Override
-        public String getName() { return "nightmode"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class NightModeCommand extends Command {
+        public NightModeCommand() {
+            super("nightmode", false);
+        }
         @Override
         public void execute(List<String> args) {
             ModUtils.nightModeCommand();
         }
     }
-    public static class ItemCommand implements Command {
+    public static class ItemCommand extends Command {
         List<String> actionList = Arrays.asList(
                 "name", "addlore", "removelore", "editlore", "enchant", "unenchant",
                 "nbt", "enchlist", "break", "unbreak", "dur", "durability");
-        @Override
-        public String getName() { return "item"; }
-        @Override
-        public boolean isUtil() { return false; }
+        public ItemCommand() {
+            super("item", false);
+        }
         @Override
         public void execute(List<String> args) {
             // todo rewrite this govnocode
@@ -363,11 +355,10 @@ public class Commands {
             ModUtils.sendBarSuccess();
         }
     }
-    public static class PlayerInteractCommand implements Command {
-        @Override
-        public String getName() { return "mlmodplayerinteract"; }
-        @Override
-        public boolean isUtil() { return true; }
+    public static class PlayerInteractCommand extends Command {
+        public PlayerInteractCommand() {
+            super("mlmodplayerinteract", true);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) return;
@@ -403,11 +394,10 @@ public class Commands {
             sendPrefixMessage(menu);
         }
     }
-    public static class VarsCommand implements Command {
-        @Override
-        public String getName() { return "vars"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class VarsCommand extends Command {
+        public VarsCommand() {
+            super("vars", false);
+        }
         @Override
         public void execute(List<String> args) {
             List<Variable> vars = varCollector.readVariables();
@@ -431,11 +421,10 @@ public class Commands {
             sendPrefixMessage(varComponent);
         }
     }
-    public static class VarSaveCommand implements Command {
-        @Override
-        public String getName() { return "varsave"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class VarSaveCommand extends Command {
+        public VarSaveCommand() {
+            super("varsave", false);
+        }
         @Override
         public void execute(List<String> args) {
             Variable variable = Variable.fromItem(mc.player.getHeldItemMainhand());
@@ -447,11 +436,10 @@ public class Commands {
             sendPrefixMessage(translate("mlmod.messages.vars.var_saved", variable.getType().name()));
         }
     }
-    public static class RemoveVarCommand implements Command {
-        @Override
-        public String getName() { return "mlmodremovevar"; }
-        @Override
-        public boolean isUtil() { return true; }
+    public static class RemoveVarCommand extends Command {
+        public RemoveVarCommand() {
+            super("mlmodremovevar", true);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) return;
@@ -463,11 +451,10 @@ public class Commands {
             sendPrefixMessage(translate("mlmod.messages.vars.var_not_removed"));
         }
     }
-    public static class GetVarCommand implements Command {
-        @Override
-        public String getName() { return "mlmodgetvar"; }
-        @Override
-        public boolean isUtil() { return true; }
+    public static class GetVarCommand extends Command {
+        public GetVarCommand() {
+            super("mlmodgetvar", true);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) return;
@@ -483,11 +470,10 @@ public class Commands {
             }
         }
     }
-    public static class ToggleMsgCollectorCommand implements Command {
-        @Override
-        public String getName() { return "mlmodtogglemsgcollector"; }
-        @Override
-        public boolean isUtil() { return true; }
+    public static class ToggleMsgCollectorCommand extends Command {
+        public ToggleMsgCollectorCommand() {
+            super("mlmodtogglemsgcollector", true);
+        }
         @Override
         public void execute(List<String> args) {
             Configuration.GENERAL.MESSAGE_COLLECTOR = Configuration.Bool.fromBoolean(!Configuration.GENERAL.MESSAGE_COLLECTOR.get());
@@ -495,11 +481,10 @@ public class Commands {
             ModUtils.sendSuccess();
         }
     }
-    public static class ShowMessageAdsCommand implements Command {
-        @Override
-        public String getName() { return "mlmodshowmessageads"; }
-        @Override
-        public boolean isUtil() { return true; }
+    public static class ShowMessageAdsCommand extends Command {
+        public ShowMessageAdsCommand() {
+            super("mlmodshowmessageads", true);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) return;
@@ -517,11 +502,10 @@ public class Commands {
             sendPrefixMessage(adsComponent);
         }
     }
-    public static class CopyTextCommand implements Command {
-        @Override
-        public String getName() { return "mlmodcopytext"; }
-        @Override
-        public boolean isUtil() { return true; }
+    public static class CopyTextCommand extends Command {
+        public CopyTextCommand() {
+            super("mlmodcopytext", true);
+        }
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) return;
@@ -530,22 +514,20 @@ public class Commands {
             sendPrefixMessage(translate("mlmod.messages.text_copied", text));
         }
     }
-    public static class ReloadMessagesCommand implements Command {
-        @Override
-        public String getName() { return "rlmsg"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class ReloadMessagesCommand extends Command {
+        public ReloadMessagesCommand() {
+            super("rlmsg", false);
+        }
         @Override
         public void execute(List<String> args) {
             int loaded = Messages.reloadMessages();
             sendPrefixMessage(new TextComponentTranslation("mlmod.messages.reloaded_messages", "§7"+loaded));
         }
     }
-    public static class HelpCommand implements Command {
-        @Override
-        public String getName() { return "help"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class HelpCommand extends Command {
+        public HelpCommand() {
+            super("help", false);
+        }
         @Override
         public void execute(List<String> args) {
             int helpLines = 11;
@@ -555,11 +537,10 @@ public class Commands {
             mc.player.sendMessage(help);
         }
     }
-    public static class VarCommand implements Command {
-        @Override
-        public String getName() { return "var"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class VarCommand extends Command {
+        public VarCommand() {
+            super("var", false);
+        }
         @Override
         public void execute(List<String> args) {
             if (!mc.player.isCreative()) {
@@ -573,11 +554,10 @@ public class Commands {
             mc.ingameGUI.setOverlayMessage(translate("mlmod.messages.var.var_given"), false);
         }
     }
-    public static class TextCommand implements Command {
-        @Override
-        public String getName() { return "text"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class TextCommand extends Command {
+        public TextCommand() {
+            super("text", false);
+        }
         @Override
         public void execute(List<String> args) {
             if (!mc.player.isCreative()) {
@@ -592,11 +572,10 @@ public class Commands {
             mc.ingameGUI.setOverlayMessage(translate("mlmod.messages.var.var_given"), false);
         }
     }
-    public static class NumberCommand implements Command {
-        @Override
-        public String getName() { return "num"; }
-        @Override
-        public boolean isUtil() { return false; }
+    public static class NumberCommand extends Command {
+        public NumberCommand() {
+            super("num", false);
+        }
         @Override
         public void execute(List<String> args) {
             if (!mc.player.isCreative()) {
