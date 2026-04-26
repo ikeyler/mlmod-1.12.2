@@ -5,6 +5,7 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
+import org.apache.commons.lang3.StringUtils;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -53,5 +54,10 @@ public class TextUtil {
     public static void copyToClipboard(String text) {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(new StringSelection(text), null);
+    }
+    public static String trimMessage(String msg, List<String> prefixes) {
+        return prefixes.stream().filter(msg::endsWith).findFirst()
+                .map(p -> StringUtils.removeEnd(msg, p).trim())
+                .orElse(msg);
     }
 }

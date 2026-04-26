@@ -1,15 +1,12 @@
 package ikeyler.mlmod.commands;
 
-import net.minecraft.client.Minecraft;
-
 import java.util.List;
 
-public abstract class Command implements ICommand {
+public abstract class UtilCommand implements ICommand {
     protected final String name;
     private boolean enabled = true;
     public abstract void execute(List<String> args);
-    protected final Minecraft mc = Minecraft.getMinecraft();
-    public Command(String name) {
+    public UtilCommand(String name) {
         this.name = name;
     }
     @Override

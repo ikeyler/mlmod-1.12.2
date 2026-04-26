@@ -25,6 +25,5 @@ public class EventListener {
     @SubscribeEvent
     public void onWorldChange(WorldEvent.Load event) {
         ModUtils.disableNightDevMode();
-        ModUtils.LATEST_WORLD_JOIN = LocalDateTime.now();
     }
 }

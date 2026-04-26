@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ModUtils {
     private static final Minecraft mc = Minecraft.getMinecraft();
@@ -23,9 +24,16 @@ public class ModUtils {
     public static final String NOTIFICATION_SOUND = "entity.experience_orb.pickup";
     public static boolean NIGHT_DEV_MODE = false;
     public static float GAME_GAMMA_SETTING = mc.gameSettings.gammaSetting;
-    public static LocalDateTime LATEST_WORLD_JOIN = LocalDateTime.now();
     public static final String VAR_SEPARATOR = "::";
+    private static List<String> ignoredPlayers;
 
+    public static boolean isPlayerIgnored(String name) {
+        return getIgnoredPlayers().contains(name.toLowerCase());
+    }
+    public static List<String> getIgnoredPlayers() {
+        ignoredPlayers = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
+        return ignoredPlayers;
+    }
     public static List<String> readAllLines(File file) {
         try {
             return Files.readAllLines(file.toPath());

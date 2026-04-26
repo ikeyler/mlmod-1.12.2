@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ItemUtil {
-    private static Minecraft mc = Minecraft.getMinecraft();
+    static Minecraft mc = Minecraft.getMinecraft();
     public static ItemStack getPlayerHead(String playerName) {
         ItemStack head = new ItemStack(Items.SKULL, 1, 3);
         head.setTagCompound(new NBTTagCompound());

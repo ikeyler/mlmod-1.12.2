@@ -12,6 +12,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static ikeyler.mlmod.Main.*;
@@ -50,7 +51,7 @@ public class ChatListener {
     public void onChatReceivedEvent(ClientChatReceivedEvent event) {
         if (Configuration.MISC.DETECT_MINELAND.get() && !ModUtils.isOnMineland())
             return;
-        messageManager.processMessages(event.getMessage().getUnformattedText(), event);
+        messageManager.processMessage(event.getMessage().getUnformattedText(), event);
     }
 
     @SubscribeEvent
@@ -62,14 +63,16 @@ public class ChatListener {
         if (message.startsWith("/")) {
             if (Configuration.MISC.COMMAND_ALIASES.length > 0)
                 processAlias(message, event);
-            Command command;
-            if ((command = manager.getCommand(start.replaceFirst("/", ""))) != null) {
-                List<String> args = split.length > 1 ? Arrays.asList(split).subList(1, split.length) : new ArrayList<>();
+
+            String commandName = start.toLowerCase().replaceFirst("/", "");
+            List<String> args = split.length > 1 ? Arrays.asList(split).subList(1, split.length) : Collections.emptyList();
+            manager.getCommand(commandName).ifPresent(command -> {
+                if (!command.isEnabled()) return;
                 command.execute(args);
                 event.setCanceled(true);
-                if (!command.isUtil())
+                if (command instanceof Command)
                     mc.ingameGUI.getChatGUI().addToSentMessages(message);
-            }
+            });
         }
 
         if (message.startsWith("!") && Configuration.GENERAL.EXCL_MARK_TO_CHAT != Configuration.CHAT_MODE.OFF) {

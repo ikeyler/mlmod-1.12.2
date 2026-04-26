@@ -12,7 +12,6 @@ import ikeyler.mlmod.util.ModUtils;
 import ikeyler.mlmod.util.SoundUtil;
 import ikeyler.mlmod.util.TextUtil;
 import ikeyler.mlmod.variables.Variable;
-import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -27,7 +26,6 @@ import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -37,25 +35,9 @@ import static ikeyler.mlmod.Main.*;
 import static ikeyler.mlmod.util.ModUtils.*;
 
 public class Commands {
-    public static final List<Command> commandList = Arrays.asList(
-            new ConfigCommand(), new MessagesCommand(), new IgnoreListCommand(), new SoundCommand(),
-            new IgnoreCommand(), new HeadCommand(), new NightModeCommand(), new ItemCommand(),
-            new PlayerInteractCommand(), new VarsCommand(), new VarSaveCommand(), new RemoveVarCommand(),
-            new GetVarCommand(), new ToggleMsgCollectorCommand(), new ShowMessageAdsCommand(), new CopyTextCommand(),
-            new ReloadMessagesCommand(), new HelpCommand(), new VarCommand(), new TextCommand(),
-            new NumberCommand()
-    );
-    static Minecraft mc = Minecraft.getMinecraft();
-    static void sendPrefixMessage(ITextComponent component) {
-        mc.player.sendMessage(new TextComponentString(MOD_PREFIX).appendSibling(component));
-    }
-    static TextComponentTranslation translate(String translation, Object... args) {
-        return new TextComponentTranslation(translation, args);
-    }
-
     public static class ConfigCommand extends Command {
         public ConfigCommand() {
-            super("mlc", false);
+            super("mlc");
         }
         @Override
         public void execute(List<String> args) {
@@ -69,7 +51,7 @@ public class Commands {
     }
     public static class MessagesCommand extends Command {
         public MessagesCommand() {
-            super("msgs", false);
+            super("msgs");
         }
         @Override
         public void execute(List<String> args) {
@@ -101,7 +83,7 @@ public class Commands {
     }
     public static class IgnoreListCommand extends Command {
         public IgnoreListCommand() {
-            super("ignorelist", false);
+            super("ignorelist");
         }
         @Override
         public void execute(List<String> args) {
@@ -124,7 +106,8 @@ public class Commands {
     }
     public static class SoundCommand extends Command {
         public SoundCommand() {
-            super("sound", false);
+            super("sound");
+            this.setEnabled(Configuration.CREATIVE.SOUND_COMMAND.get());
         }
         @Override
         public void execute(List<String> args) {
@@ -177,7 +160,7 @@ public class Commands {
     }
     public static class IgnoreCommand extends Command {
         public IgnoreCommand() {
-            super("mlignore", false);
+            super("mlignore");
         }
         @Override
         public void execute(List<String> args) {
@@ -201,7 +184,7 @@ public class Commands {
     }
     public static class HeadCommand extends Command {
         public HeadCommand() {
-            super("head", false);
+            super("head");
         }
         @Override
         public void execute(List<String> args) {
@@ -227,7 +210,7 @@ public class Commands {
     }
     public static class NightModeCommand extends Command {
         public NightModeCommand() {
-            super("nightmode", false);
+            super("nightmode");
         }
         @Override
         public void execute(List<String> args) {
@@ -239,11 +222,10 @@ public class Commands {
                 "name", "addlore", "removelore", "editlore", "enchant", "unenchant",
                 "nbt", "enchlist", "break", "unbreak", "dur", "durability");
         public ItemCommand() {
-            super("item", false);
+            super("item");
         }
         @Override
         public void execute(List<String> args) {
-            // todo rewrite this govnocode
             if (args.isEmpty()) {
                 new ChatEditor(mc.player.getHeldItemMainhand()).printChatEditor();
                 return;
@@ -355,48 +337,9 @@ public class Commands {
             ModUtils.sendBarSuccess();
         }
     }
-    public static class PlayerInteractCommand extends Command {
-        public PlayerInteractCommand() {
-            super("mlmodplayerinteract", true);
-        }
-        @Override
-        public void execute(List<String> args) {
-            if (args.isEmpty()) return;
-            // an awful way to store params
-            String[] params = String.join(" ", args).split("§§");
-            String player = params[0];
-            String msg = params.length > 1 ? params[1] : null;
-            String chat = params.length > 2 ? params[2] : null;
-            TextComponentString playerComp = new TextComponentString("§7§o"+player);
-            playerComp.appendSibling(translate("mlmod.copy"));
-            playerComp.setStyle(TextUtil.clickToCopyStyle(player, "name", false));
-            TextComponentTranslation menu = translate("mlmod.messages.chat_player_interact", playerComp);
-            menu.appendText("\n");
-            List<ITextComponent> components = new ArrayList<>();
-            if (msg != null && chat != null)
-                components.add(translate("mlmod.messages.reply")
-                        .setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, chat + " "))));
-            if (msg != null) {
-                components.add(translate("mlmod.messages.copy_message")
-                        .setStyle(TextUtil.newStyle()
-                            .setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/mlmodcopytext " + msg))
-                            .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponentString(msg)))));
-            }
-            String[][] buttons = {
-                    {"report", "/report %p"}, {"block", "/mlignore %p"},
-                    {"find_messages", "/msgs find %p "}, {"find_who", "/who %p"}};
-            for (String[] btn : buttons) {
-                ClickEvent.Action action = !btn[0].equals("find_messages") ? ClickEvent.Action.RUN_COMMAND : ClickEvent.Action.SUGGEST_COMMAND;
-                components.add(translate("mlmod.messages."+btn[0])
-                        .setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(action, btn[1].replace("%p", player)))));
-            }
-            components.forEach(component -> menu.appendSibling(component).appendText(" "));
-            sendPrefixMessage(menu);
-        }
-    }
     public static class VarsCommand extends Command {
         public VarsCommand() {
-            super("vars", false);
+            super("vars");
         }
         @Override
         public void execute(List<String> args) {
@@ -423,7 +366,7 @@ public class Commands {
     }
     public static class VarSaveCommand extends Command {
         public VarSaveCommand() {
-            super("varsave", false);
+            super("varsave");
         }
         @Override
         public void execute(List<String> args) {
@@ -436,87 +379,9 @@ public class Commands {
             sendPrefixMessage(translate("mlmod.messages.vars.var_saved", variable.getType().name()));
         }
     }
-    public static class RemoveVarCommand extends Command {
-        public RemoveVarCommand() {
-            super("mlmodremovevar", true);
-        }
-        @Override
-        public void execute(List<String> args) {
-            if (args.isEmpty()) return;
-            Variable parsedVar = Variable.fromString(String.join(" ", args));
-            if (parsedVar != null && varCollector.removeVariable(parsedVar)) {
-                sendPrefixMessage(translate("mlmod.messages.vars.var_removed", parsedVar.getName()));
-                return;
-            }
-            sendPrefixMessage(translate("mlmod.messages.vars.var_not_removed"));
-        }
-    }
-    public static class GetVarCommand extends Command {
-        public GetVarCommand() {
-            super("mlmodgetvar", true);
-        }
-        @Override
-        public void execute(List<String> args) {
-            if (args.isEmpty()) return;
-            if (!mc.player.isCreative()) {
-                ModUtils.sendCreativeModeNeeded();
-                return;
-            }
-            Variable parsedVar = Variable.fromString(String.join(" ", args));
-            ItemStack itemVar;
-            if (parsedVar != null && (itemVar = Variable.itemFromVariable(parsedVar)) != null) {
-                int slotId = mc.player.inventory.getFirstEmptyStack();
-                ItemUtil.updateSlot(itemVar, slotId);
-            }
-        }
-    }
-    public static class ToggleMsgCollectorCommand extends Command {
-        public ToggleMsgCollectorCommand() {
-            super("mlmodtogglemsgcollector", true);
-        }
-        @Override
-        public void execute(List<String> args) {
-            Configuration.GENERAL.MESSAGE_COLLECTOR = Configuration.Bool.fromBoolean(!Configuration.GENERAL.MESSAGE_COLLECTOR.get());
-            ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
-            ModUtils.sendSuccess();
-        }
-    }
-    public static class ShowMessageAdsCommand extends Command {
-        public ShowMessageAdsCommand() {
-            super("mlmodshowmessageads", true);
-        }
-        @Override
-        public void execute(List<String> args) {
-            if (args.isEmpty()) return;
-            TextComponentString adsComponent = new TextComponentString("");
-            adsComponent.appendSibling(translate("mlmod.messages.world_list"));
-            adsComponent.appendText("\n");
-            for (String adCmd : String.join(" ", args).split(",")) {
-                TextComponentString ad = new TextComponentString("§8- §7"+adCmd);
-                ad.setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, adCmd))
-                        .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, translate("mlmod.messages.world_list.join"))));
-                ad.appendSibling(translate("mlmod.copy").setStyle(TextUtil.clickToCopyStyle(adCmd, "id", false)));
-                ad.appendText("\n");
-                adsComponent.appendSibling(ad);
-            }
-            sendPrefixMessage(adsComponent);
-        }
-    }
-    public static class CopyTextCommand extends Command {
-        public CopyTextCommand() {
-            super("mlmodcopytext", true);
-        }
-        @Override
-        public void execute(List<String> args) {
-            if (args.isEmpty()) return;
-            String text = String.join(" ", args);
-            TextUtil.copyToClipboard(text);
-            sendPrefixMessage(translate("mlmod.messages.text_copied", text));
-        }
-    }
     public static class ReloadMessagesCommand extends Command {
         public ReloadMessagesCommand() {
-            super("rlmsg", false);
+            super("rlmsg");
         }
         @Override
         public void execute(List<String> args) {
@@ -526,7 +391,7 @@ public class Commands {
     }
     public static class HelpCommand extends Command {
         public HelpCommand() {
-            super("help", false);
+            super("help");
         }
         @Override
         public void execute(List<String> args) {
@@ -539,7 +404,7 @@ public class Commands {
     }
     public static class VarCommand extends Command {
         public VarCommand() {
-            super("var", false);
+            super("var");
         }
         @Override
         public void execute(List<String> args) {
@@ -556,7 +421,7 @@ public class Commands {
     }
     public static class TextCommand extends Command {
         public TextCommand() {
-            super("text", false);
+            super("text");
         }
         @Override
         public void execute(List<String> args) {
@@ -574,7 +439,7 @@ public class Commands {
     }
     public static class NumberCommand extends Command {
         public NumberCommand() {
-            super("num", false);
+            super("num");
         }
         @Override
         public void execute(List<String> args) {
