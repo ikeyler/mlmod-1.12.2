@@ -1,8 +1,9 @@
 package ikeyler.mlmod;
 
-import ikeyler.mlmod.messages.Manager;
+import ikeyler.mlmod.messages.MessageManager;
 import ikeyler.mlmod.messages.MessageCollector;
 import ikeyler.mlmod.messages.Messages;
+import ikeyler.mlmod.missedmessages.MissedMessagesManager;
 import ikeyler.mlmod.variables.VarCollector;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
@@ -16,9 +17,10 @@ import org.apache.logging.log4j.Logger;
 public class Main
 {
     public static final Logger logger = LogManager.getLogger();
-    public static final Manager messageManager = new Manager();
+    public static final MessageManager messageManager = new MessageManager();
     public static final MessageCollector messageCollector = new MessageCollector();
     public static final VarCollector varCollector = new VarCollector();
+    public static final MissedMessagesManager missedMessagesManager = new MissedMessagesManager();
     @EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {

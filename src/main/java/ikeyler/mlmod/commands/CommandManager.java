@@ -35,6 +35,7 @@ public class CommandManager {
         register(new VarCommand());
         register(new TextCommand());
         register(new NumberCommand());
+        register(new MissedMessagesCommand());
         Main.logger.info("registered {} commands", commands.size());
     }
     public void register(ICommand command) {

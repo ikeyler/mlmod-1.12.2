@@ -163,13 +163,14 @@ public class Processors {
                 MessageType type = isPM ? MessageType.PRIVATE_MESSAGE : MessageType.PM_REPLY;
                 String data = isPM ? msg : matcher.group(1) + " -> " + msg;
                 ctx.messageCollector.addEntry(type, player, data);
+                if (isPM)
+                    ctx.missedMessagesManager.addMessage(player, msg);
                 if (ModUtils.isPlayerIgnored(player)) {
                     event.setCanceled(true);
                     return true;
                 }
-                if (Configuration.GENERAL.PM_NOTIFICATION.get() && !mc.inGameHasFocus) {
+                if (Configuration.GENERAL.PM_NOTIFICATION.get() && !mc.inGameHasFocus)
                     SoundUtil.playSound(ModUtils.NOTIFICATION_SOUND, 0.5F, 0.7F);
-                }
                 return true;
             }
             return false;

@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,5 +61,9 @@ public class TextUtil {
         return prefixes.stream().filter(msg::endsWith).findFirst()
                 .map(p -> StringUtils.removeEnd(msg, p).trim())
                 .orElse(msg);
+    }
+    public static String dateAsString() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm:ss");
+        return LocalDateTime.now().format(formatter);
     }
 }

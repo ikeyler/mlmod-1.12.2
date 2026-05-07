@@ -7,6 +7,7 @@ import ikeyler.mlmod.itemeditor.ChatEditor;
 import ikeyler.mlmod.itemeditor.ItemEditor;
 import ikeyler.mlmod.messages.MessageType;
 import ikeyler.mlmod.messages.Messages;
+import ikeyler.mlmod.missedmessages.MissedMessage;
 import ikeyler.mlmod.util.ItemUtil;
 import ikeyler.mlmod.util.ModUtils;
 import ikeyler.mlmod.util.SoundUtil;
@@ -78,7 +79,7 @@ public class Commands {
                     query = query.split(" ").length == 1 ? null : query.substring(0, query.lastIndexOf(" ")).trim();
                 messageCollector.findAsync(query, type, 100);
             }
-            else ModUtils.sendIncorrectArguments();
+            else sendIncorrectArguments();
         }
     }
     public static class IgnoreListCommand extends Command {
@@ -87,7 +88,7 @@ public class Commands {
         }
         @Override
         public void execute(List<String> args) {
-            List<String> ignoredPlayers = Arrays.asList(Configuration.GENERAL.IGNORED_PLAYERS);
+            List<String> ignoredPlayers = ModUtils.getIgnoredPlayers();
             ITextComponent ignoreComponent = new TextComponentString("");
             ignoreComponent.appendSibling(translate("mlmod.messages.ignorelist.ignore_list", ignoredPlayers.size()));
             ignoreComponent.appendText("\n");
@@ -130,7 +131,7 @@ public class Commands {
                     pitch = args.size() > 1 ? Float.parseFloat(args.get(1)) : pitch;
                     volume = args.size() > 2 ? Float.parseFloat(args.get(2)) : volume;
                 } catch (Exception ignore) {
-                    ModUtils.sendIncorrectArguments(); return;
+                    sendIncorrectArguments(); return;
                 }
                 mc.getSoundHandler().stopSounds();
                 mc.ingameGUI.setOverlayMessage(translate("mlmod.messages.sound.playing_sound", sound), true);
@@ -165,11 +166,11 @@ public class Commands {
         @Override
         public void execute(List<String> args) {
             if (args.isEmpty()) {
-                ModUtils.sendIncorrectArguments();
+                sendIncorrectArguments();
                 return;
             }
             String player = args.get(0).toLowerCase();
-            List<String> players = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
+            List<String> players = ModUtils.getIgnoredPlayers();
             boolean containsPlayer = players.contains(player);
             String ignoreAction = (containsPlayer ? "/ignore remove " : "/ignore add ") + player + " ";
             String ignoreMessage = containsPlayer ? "mlmod.messages.ignore.player_removed" : "mlmod.messages.ignore.player_added";
@@ -193,7 +194,7 @@ public class Commands {
                 return;
             }
             if (!mc.player.isCreative()) {
-                ModUtils.sendCreativeModeNeeded();
+                sendCreativeModeNeeded();
                 return;
             }
             try {
@@ -203,7 +204,7 @@ public class Commands {
                 ItemUtil.updateSlot(head, slotId);
                 sendPrefixMessage(translate("mlmod.messages.head.head_given", "§7"+headName));
             } catch (Exception e) {
-                ModUtils.sendCommandError();
+                sendCommandError();
                 Main.logger.error(e);
             }
         }
@@ -232,7 +233,7 @@ public class Commands {
             }
             String action = args.get(0).toLowerCase();
             if (!actionList.contains(action)) {
-                ModUtils.sendIncorrectArguments();
+                sendIncorrectArguments();
                 return;
             }
             ItemStack itemStack = mc.player.getHeldItemMainhand();
@@ -253,7 +254,7 @@ public class Commands {
                         int loreIndex = Integer.parseInt(subArgs.get(0));
                         ItemEditor.editLore(itemStack, loreIndex, TextUtil.replaceColorCodes(subArg.substring(subArg.indexOf(" ")+1)));
                     } catch (Exception ignore) {
-                        ModUtils.sendIncorrectArguments();
+                        sendIncorrectArguments();
                         return;
                     }
                     break;
@@ -266,7 +267,7 @@ public class Commands {
                             int loreIndex = Integer.parseInt(subArgs.get(0));
                             ItemEditor.removeLore(itemStack, loreIndex);
                         } catch (Exception ignore) {
-                            ModUtils.sendCommandError();
+                            sendCommandError();
                             return;
                         }
                     }
@@ -297,7 +298,7 @@ public class Commands {
                         int level = Integer.parseInt(subArgs.get(1));
                         ItemEditor.addEnchantment(itemStack, ench, level);
                     } catch (Exception ignore) {
-                        ModUtils.sendIncorrectArguments();
+                        sendIncorrectArguments();
                         return;
                     }
                     break;
@@ -314,7 +315,7 @@ public class Commands {
                             }
                             ItemEditor.removeEnchantment(itemStack, ench);
                         } catch (Exception ignore) {
-                            ModUtils.sendCommandError();
+                            sendCommandError();
                             return;
                         }
                     }
@@ -328,13 +329,13 @@ public class Commands {
                     try {
                         itemStack.setItemDamage(Integer.parseInt(subArgs.get(0)));
                     } catch (Exception ignore) {
-                        ModUtils.sendIncorrectArguments();
+                        sendIncorrectArguments();
                         return;
                     }
                     break;
             }
             mc.playerController.sendSlotPacket(itemStack, 36+mc.player.inventory.currentItem);
-            ModUtils.sendBarSuccess();
+            sendBarSuccess();
         }
     }
     public static class VarsCommand extends Command {
@@ -409,7 +410,8 @@ public class Commands {
         @Override
         public void execute(List<String> args) {
             if (!mc.player.isCreative()) {
-                ModUtils.sendCreativeModeNeeded(); return;
+                sendCreativeModeNeeded();
+                return;
             }
             ItemStack item = ItemUtil.getDynamicVar(false);
             String name = !args.isEmpty() ? String.join(" ", args) : "";
@@ -426,7 +428,7 @@ public class Commands {
         @Override
         public void execute(List<String> args) {
             if (!mc.player.isCreative()) {
-                ModUtils.sendCreativeModeNeeded(); return;
+                sendCreativeModeNeeded(); return;
             }
             ItemStack item = Items.BOOK.getDefaultInstance();
             String name = !args.isEmpty() ? String.join(" ", args) : "";
@@ -444,7 +446,7 @@ public class Commands {
         @Override
         public void execute(List<String> args) {
             if (!mc.player.isCreative()) {
-                ModUtils.sendCreativeModeNeeded(); return;
+                sendCreativeModeNeeded(); return;
             }
             ItemStack item = Items.SLIME_BALL.getDefaultInstance();
             String name = !args.isEmpty() ? String.join(" ", args) : "";
@@ -453,6 +455,34 @@ public class Commands {
             int slotId = mc.player.inventory.getFirstEmptyStack();
             ItemUtil.updateSlot(item, slotId);
             mc.ingameGUI.setOverlayMessage(translate("mlmod.messages.var.var_given"), false);
+        }
+    }
+    public static class MissedMessagesCommand extends Command {
+        public MissedMessagesCommand() {
+            super("missed");
+        }
+        @Override
+        public void execute(List<String> args) {
+            if (!args.isEmpty()) {
+                missedMessagesManager.clearMessages();
+                sendPrefixMessage(translate("mlmod.messages.missedmessages.marked_as_read"));
+                return;
+            }
+            List<MissedMessage> missedMessages = missedMessagesManager.getMessages();
+            ITextComponent component = new TextComponentString("");
+            component.appendSibling(translate("mlmod.messages.missedmessages.messages_list", missedMessages.size()));
+            component.appendText("\n");
+            for (MissedMessage missedMessage : missedMessages) {
+                String message = String.format("§7%s §8| §7%s -> §f%s",
+                        missedMessage.getDate(), missedMessage.getPlayerName(), missedMessage.getMessage());
+                component.appendText("§8- §7").appendText(message).appendText("\n");
+            }
+            if (!missedMessages.isEmpty()) {
+                ITextComponent markReadButton = translate("mlmod.messages.missedmessages.mark_as_read");
+                markReadButton.setStyle(TextUtil.newStyle().setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/missed read")));
+                component.appendSibling(markReadButton);
+            }
+            sendPrefixMessage(component);
         }
     }
 }

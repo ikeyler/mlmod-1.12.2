@@ -20,8 +20,6 @@ import static ikeyler.mlmod.Main.*;
 public class ChatListener {
     private final Minecraft mc = Minecraft.getMinecraft();
     private final CommandManager manager = new CommandManager();
-    private final List<String> commands = new ArrayList<>(
-            Arrays.asList("/mlc", "/item", "/var", "/text", "/num", "/msgs", "/ignorelist", "/head", "/nightmode", "/vars", "/varsave", "/rlmsg"));
 
     private void processAlias(String cmd, ClientChatEvent event) {
         String[] split = cmd.split(" ", 2);
@@ -34,14 +32,9 @@ public class ChatListener {
             if (command.equalsIgnoreCase(entry[0]) && !command.equalsIgnoreCase(entry[1])) {
                 event.setCanceled(true);
                 String aliasCmd = (!entry[1].startsWith("/") ? "/" : "") + entry[1].toLowerCase();
-                String newCmd = aliasCmd + " " + args;
-                if (commands.contains(aliasCmd)) {
-                    MinecraftForge.EVENT_BUS.post(new ClientChatEvent(newCmd));
-                }
-                else {
-                    mc.player.sendChatMessage(newCmd);
-                    mc.ingameGUI.getChatGUI().addToSentMessages(cmd);
-                }
+                String newCmd = (aliasCmd + " " + args).trim();
+                mc.ingameGUI.getChatGUI().addToSentMessages(newCmd);
+                MinecraftForge.EVENT_BUS.post(new ClientChatEvent(newCmd));
                 break;
             }
         }

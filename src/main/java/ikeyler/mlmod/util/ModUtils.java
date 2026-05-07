@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,14 +26,12 @@ public class ModUtils {
     public static boolean NIGHT_DEV_MODE = false;
     public static float GAME_GAMMA_SETTING = mc.gameSettings.gammaSetting;
     public static final String VAR_SEPARATOR = "::";
-    private static List<String> ignoredPlayers;
 
     public static boolean isPlayerIgnored(String name) {
         return getIgnoredPlayers().contains(name.toLowerCase());
     }
     public static List<String> getIgnoredPlayers() {
-        ignoredPlayers = Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
-        return ignoredPlayers;
+        return Arrays.stream(Configuration.GENERAL.IGNORED_PLAYERS).map(String::toLowerCase).collect(Collectors.toList());
     }
     public static List<String> readAllLines(File file) {
         try {
@@ -78,20 +77,5 @@ public class ModUtils {
         }
         enableNightDevMode();
         mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.nightmode.enabled"));
-    }
-    public static void sendSuccess() {
-        mc.player.sendMessage(new TextComponentTranslation("mlmod.success"));
-    }
-    public static void sendBarSuccess() {
-        mc.ingameGUI.setOverlayMessage(new TextComponentTranslation("mlmod.success"), false);
-    }
-    public static void sendIncorrectArguments() {
-        mc.player.sendMessage(new TextComponentTranslation("mlmod.incorrect_arguments"));
-    }
-    public static void sendCommandError() {
-        mc.player.sendMessage(new TextComponentTranslation("mlmod.command_error"));
-    }
-    public static void sendCreativeModeNeeded() {
-        mc.player.sendMessage(new TextComponentTranslation("mlmod.messages.creative_mode_needed"));
     }
 }

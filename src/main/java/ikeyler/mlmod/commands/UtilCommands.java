@@ -83,7 +83,7 @@ public class UtilCommands {
         public void execute(List<String> args) {
             if (args.isEmpty()) return;
             if (!mc.player.isCreative()) {
-                ModUtils.sendCreativeModeNeeded();
+                sendCreativeModeNeeded();
                 return;
             }
             Variable parsedVar = Variable.fromString(String.join(" ", args));
@@ -102,7 +102,7 @@ public class UtilCommands {
         public void execute(List<String> args) {
             Configuration.GENERAL.MESSAGE_COLLECTOR = Configuration.Bool.fromBoolean(!Configuration.GENERAL.MESSAGE_COLLECTOR.get());
             ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
-            ModUtils.sendSuccess();
+            sendSuccess();
         }
     }
     public static class ShowMessageAdsCommand extends UtilCommand {
